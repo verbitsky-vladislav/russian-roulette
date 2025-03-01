@@ -1,0 +1,9 @@
+.idea
+# Go dependency directories
+/vendor/
+
+# Enviroments
+
+# Volumes
+/docker/volumes/**/*
+/docker/volumes/

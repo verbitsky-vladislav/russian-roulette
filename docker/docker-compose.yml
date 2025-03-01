@@ -1,0 +1,67 @@
+name: russian-roulette-apps
+
+services:
+  db:
+    image: postgres:16
+    container_name: russian-roulette-postgres
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "M35LRR1lLQRgMyJauef1I0NS"
+      POSTGRES_DB: "russian-roulette"
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT}:${POSTGRES_INTERNAL_PORT}"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - ./volumes/postgres_data:/var/lib/postgresql/data
+#      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - russian_roulette_network
+
+  redis:
+    container_name: russian-roulette-redis
+    image: redis
+    command: >
+      --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_EXTERNAL_PORT}:${REDIS_INTERNAL_PORT}"
+    volumes:
+      - redis_data:/data
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - russian_roulette_network
+
+  russian-roulette:
+    image: russian-roulette:latest
+    restart: on-failure
+    build:
+      context: ../
+      dockerfile: ${DOCKERFILE}
+    container_name: russian-roulette
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - russian_roulette_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  russian_roulette_network:
+    driver: bridge

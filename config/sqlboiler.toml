@@ -1,0 +1,16 @@
+pkgname = "models"
+output = "./internal/models/"
+wipe = true
+no-tests = true
+
+[psql]
+blacklist = ["goose_db_version"]
+
+dbname = "russian-roulette"
+user = "postgres"
+pass = "M35LRR1lLQRgMyJauef1I0NS"
+host = "localhost"
+port = 7832
+sslmode = "disable"
+schema = "public"
+

@@ -1,0 +1,61 @@
+version: '3'
+
+env:
+  MIGRATE_DIR: "./internal/repository/migrations"
+  DB_URL: "postgres://postgres:M35LRR1lLQRgMyJauef1I0NS@localhost:7832/russian-roulette?sslmode=disable"
+
+tasks:
+
+  start:
+    desc: "Start application"
+    cmd: DOCKERFILE=./docker/dev.Dockerfile docker-compose -f ./docker/docker-compose.yml up --build
+
+  prod:
+    desc: "Start prod application"
+    cmd: DOCKERFILE=./docker/prod.Dockerfile docker-compose -f ./docker/docker-compose.yml up --build
+
+  stop:
+    desc: "Stop application"
+    cmd: docker-compose -f ./docker/docker-compose.yml down
+
+  packages:
+    desc: "Install packages"
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+      - go mod vendor
+
+
+  ### sqlBoiler
+  sqlboiler:
+    desc: "Generate sql models with sqlboiler."
+    cmd: sqlboiler psql --config ./config/sqlboiler.toml
+
+  ### Database
+  migrate-create-*:
+    desc: "Create a new migration file. Requires 'name' argument."
+    vars:
+      name: '{{index .MATCH 0}}'
+    cmds:
+      - goose -dir $MIGRATE_DIR create {{.name}} sql
+
+  migrate-up:
+    desc: "Apply all pending migrations."
+    cmds:
+      - goose -dir $MIGRATE_DIR postgres "$DB_URL" up
+
+  migrate-down:
+    desc: "Rollback the last migration."
+    cmds:
+      - export $(cat .env | xargs)
+      - goose -dir $MIGRATE_DIR postgres "$DB_URL" down
+
+  migrate-status:
+    desc: "Show migration status."
+    cmds:
+      - export $(cat .env | xargs)
+      - goose -dir $MIGRATE_DIR postgres "$DB_URL" status
+
+  seed:
+    desc: "Run seed."
+    cmd: go run ./internal/repository/seed/seed.go
