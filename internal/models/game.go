@@ -26,7 +26,7 @@ import (
 // Game is an object representing the database table.
 type Game struct {
 	UUID        string        `boil:"uuid" json:"uuid" toml:"uuid" yaml:"uuid"`
-	CreatorUUID string        `boil:"creator_uuid" json:"creator_uuid" toml:"creator_uuid" yaml:"creator_uuid"`
+	CreatorUUID null.String   `boil:"creator_uuid" json:"creator_uuid,omitempty" toml:"creator_uuid" yaml:"creator_uuid,omitempty"`
 	Status      string        `boil:"status" json:"status" toml:"status" yaml:"status"`
 	BetAmount   types.Decimal `boil:"bet_amount" json:"bet_amount" toml:"bet_amount" yaml:"bet_amount"`
 	BulletCount int           `boil:"bullet_count" json:"bullet_count" toml:"bullet_count" yaml:"bullet_count"`
@@ -101,6 +101,62 @@ func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+func (w whereHelpernull_String) LIKE(x null.String) qm.QueryMod {
+	return qm.Where(w.field+" LIKE ?", x)
+}
+func (w whereHelpernull_String) NLIKE(x null.String) qm.QueryMod {
+	return qm.Where(w.field+" NOT LIKE ?", x)
+}
+func (w whereHelpernull_String) ILIKE(x null.String) qm.QueryMod {
+	return qm.Where(w.field+" ILIKE ?", x)
+}
+func (w whereHelpernull_String) NILIKE(x null.String) qm.QueryMod {
+	return qm.Where(w.field+" NOT ILIKE ?", x)
+}
+func (w whereHelpernull_String) SIMILAR(x null.String) qm.QueryMod {
+	return qm.Where(w.field+" SIMILAR TO ?", x)
+}
+func (w whereHelpernull_String) NSIMILAR(x null.String) qm.QueryMod {
+	return qm.Where(w.field+" NOT SIMILAR TO ?", x)
+}
+func (w whereHelpernull_String) IN(slice []string) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 type whereHelpertypes_Decimal struct{ field string }
 
 func (w whereHelpertypes_Decimal) EQ(x types.Decimal) qm.QueryMod {
@@ -171,14 +227,14 @@ func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsN
 
 var GameWhere = struct {
 	UUID        whereHelperstring
-	CreatorUUID whereHelperstring
+	CreatorUUID whereHelpernull_String
 	Status      whereHelperstring
 	BetAmount   whereHelpertypes_Decimal
 	BulletCount whereHelperint
 	CreatedAt   whereHelpernull_Time
 }{
 	UUID:        whereHelperstring{field: "\"game\".\"uuid\""},
-	CreatorUUID: whereHelperstring{field: "\"game\".\"creator_uuid\""},
+	CreatorUUID: whereHelpernull_String{field: "\"game\".\"creator_uuid\""},
 	Status:      whereHelperstring{field: "\"game\".\"status\""},
 	BetAmount:   whereHelpertypes_Decimal{field: "\"game\".\"bet_amount\""},
 	BulletCount: whereHelperint{field: "\"game\".\"bullet_count\""},
@@ -187,17 +243,20 @@ var GameWhere = struct {
 
 // GameRels is where relationship names are stored.
 var GameRels = struct {
-	GameBets    string
+	Creator     string
 	GamePlayers string
+	GameRounds  string
 }{
-	GameBets:    "GameBets",
+	Creator:     "Creator",
 	GamePlayers: "GamePlayers",
+	GameRounds:  "GameRounds",
 }
 
 // gameR is where relationships are stored.
 type gameR struct {
-	GameBets    GameBetSlice    `boil:"GameBets" json:"GameBets" toml:"GameBets" yaml:"GameBets"`
+	Creator     *User           `boil:"Creator" json:"Creator" toml:"Creator" yaml:"Creator"`
 	GamePlayers GamePlayerSlice `boil:"GamePlayers" json:"GamePlayers" toml:"GamePlayers" yaml:"GamePlayers"`
+	GameRounds  GameRoundSlice  `boil:"GameRounds" json:"GameRounds" toml:"GameRounds" yaml:"GameRounds"`
 }
 
 // NewStruct creates a new relationship struct
@@ -205,11 +264,11 @@ func (*gameR) NewStruct() *gameR {
 	return &gameR{}
 }
 
-func (r *gameR) GetGameBets() GameBetSlice {
+func (r *gameR) GetCreator() *User {
 	if r == nil {
 		return nil
 	}
-	return r.GameBets
+	return r.Creator
 }
 
 func (r *gameR) GetGamePlayers() GamePlayerSlice {
@@ -219,13 +278,20 @@ func (r *gameR) GetGamePlayers() GamePlayerSlice {
 	return r.GamePlayers
 }
 
+func (r *gameR) GetGameRounds() GameRoundSlice {
+	if r == nil {
+		return nil
+	}
+	return r.GameRounds
+}
+
 // gameL is where Load methods for each relationship are stored.
 type gameL struct{}
 
 var (
 	gameAllColumns            = []string{"uuid", "creator_uuid", "status", "bet_amount", "bullet_count", "created_at"}
-	gameColumnsWithoutDefault = []string{"creator_uuid", "status", "bet_amount", "bullet_count"}
-	gameColumnsWithDefault    = []string{"uuid", "created_at"}
+	gameColumnsWithoutDefault = []string{"status", "bet_amount", "bullet_count"}
+	gameColumnsWithDefault    = []string{"uuid", "creator_uuid", "created_at"}
 	gamePrimaryKeyColumns     = []string{"uuid"}
 	gameGeneratedColumns      = []string{}
 )
@@ -535,18 +601,15 @@ func (q gameQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 	return count > 0, nil
 }
 
-// GameBets retrieves all the game_bet's GameBets with an executor.
-func (o *Game) GameBets(mods ...qm.QueryMod) gameBetQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
+// Creator pointed to by the foreign key.
+func (o *Game) Creator(mods ...qm.QueryMod) userQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"uuid\" = ?", o.CreatorUUID),
 	}
 
-	queryMods = append(queryMods,
-		qm.Where("\"game_bets\".\"game_uuid\"=?", o.UUID),
-	)
+	queryMods = append(queryMods, mods...)
 
-	return GameBets(queryMods...)
+	return Users(queryMods...)
 }
 
 // GamePlayers retrieves all the game_player's GamePlayers with an executor.
@@ -563,9 +626,23 @@ func (o *Game) GamePlayers(mods ...qm.QueryMod) gamePlayerQuery {
 	return GamePlayers(queryMods...)
 }
 
-// LoadGameBets allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (gameL) LoadGameBets(ctx context.Context, e boil.ContextExecutor, singular bool, maybeGame interface{}, mods queries.Applicator) error {
+// GameRounds retrieves all the game_round's GameRounds with an executor.
+func (o *Game) GameRounds(mods ...qm.QueryMod) gameRoundQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"game_rounds\".\"game_uuid\"=?", o.UUID),
+	)
+
+	return GameRounds(queryMods...)
+}
+
+// LoadCreator allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (gameL) LoadCreator(ctx context.Context, e boil.ContextExecutor, singular bool, maybeGame interface{}, mods queries.Applicator) error {
 	var slice []*Game
 	var object *Game
 
@@ -596,13 +673,20 @@ func (gameL) LoadGameBets(ctx context.Context, e boil.ContextExecutor, singular 
 		if object.R == nil {
 			object.R = &gameR{}
 		}
-		args[object.UUID] = struct{}{}
+		if !queries.IsNil(object.CreatorUUID) {
+			args[object.CreatorUUID] = struct{}{}
+		}
+
 	} else {
 		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &gameR{}
 			}
-			args[obj.UUID] = struct{}{}
+
+			if !queries.IsNil(obj.CreatorUUID) {
+				args[obj.CreatorUUID] = struct{}{}
+			}
+
 		}
 	}
 
@@ -618,8 +702,8 @@ func (gameL) LoadGameBets(ctx context.Context, e boil.ContextExecutor, singular 
 	}
 
 	query := NewQuery(
-		qm.From(`game_bets`),
-		qm.WhereIn(`game_bets.game_uuid in ?`, argsSlice...),
+		qm.From(`users`),
+		qm.WhereIn(`users.uuid in ?`, argsSlice...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -627,47 +711,51 @@ func (gameL) LoadGameBets(ctx context.Context, e boil.ContextExecutor, singular 
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load game_bets")
+		return errors.Wrap(err, "failed to eager load User")
 	}
 
-	var resultSlice []*GameBet
+	var resultSlice []*User
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice game_bets")
+		return errors.Wrap(err, "failed to bind eager loaded slice User")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on game_bets")
+		return errors.Wrap(err, "failed to close results of eager load for users")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for game_bets")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for users")
 	}
 
-	if len(gameBetAfterSelectHooks) != 0 {
+	if len(userAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
 			}
 		}
 	}
-	if singular {
-		object.R.GameBets = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &gameBetR{}
-			}
-			foreign.R.Game = object
-		}
+
+	if len(resultSlice) == 0 {
 		return nil
 	}
 
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.UUID == foreign.GameUUID {
-				local.R.GameBets = append(local.R.GameBets, foreign)
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Creator = foreign
+		if foreign.R == nil {
+			foreign.R = &userR{}
+		}
+		foreign.R.CreatorGames = append(foreign.R.CreatorGames, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.CreatorUUID, foreign.UUID) {
+				local.R.Creator = foreign
 				if foreign.R == nil {
-					foreign.R = &gameBetR{}
+					foreign.R = &userR{}
 				}
-				foreign.R.Game = local
+				foreign.R.CreatorGames = append(foreign.R.CreatorGames, local)
 				break
 			}
 		}
@@ -789,55 +877,195 @@ func (gameL) LoadGamePlayers(ctx context.Context, e boil.ContextExecutor, singul
 	return nil
 }
 
-// AddGameBets adds the given related objects to the existing relationships
-// of the game, optionally inserting them as new records.
-// Appends related to o.R.GameBets.
-// Sets related.R.Game appropriately.
-func (o *Game) AddGameBets(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*GameBet) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.GameUUID = o.UUID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"game_bets\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"game_uuid"}),
-				strmangle.WhereClause("\"", "\"", 2, gameBetPrimaryKeyColumns),
-			)
-			values := []interface{}{o.UUID, rel.GameUUID, rel.UserUUID}
+// LoadGameRounds allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (gameL) LoadGameRounds(ctx context.Context, e boil.ContextExecutor, singular bool, maybeGame interface{}, mods queries.Applicator) error {
+	var slice []*Game
+	var object *Game
 
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
+	if singular {
+		var ok bool
+		object, ok = maybeGame.(*Game)
+		if !ok {
+			object = new(Game)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeGame)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeGame))
 			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.GameUUID = o.UUID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &gameR{
-			GameBets: related,
 		}
 	} else {
-		o.R.GameBets = append(o.R.GameBets, related...)
+		s, ok := maybeGame.(*[]*Game)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeGame)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeGame))
+			}
+		}
 	}
 
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &gameBetR{
-				Game: o,
-			}
-		} else {
-			rel.R.Game = o
+	args := make(map[interface{}]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &gameR{}
 		}
+		args[object.UUID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &gameR{}
+			}
+			args[obj.UUID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]interface{}, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`game_rounds`),
+		qm.WhereIn(`game_rounds.game_uuid in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load game_rounds")
+	}
+
+	var resultSlice []*GameRound
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice game_rounds")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on game_rounds")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for game_rounds")
+	}
+
+	if len(gameRoundAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.GameRounds = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &gameRoundR{}
+			}
+			foreign.R.Game = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.UUID, foreign.GameUUID) {
+				local.R.GameRounds = append(local.R.GameRounds, foreign)
+				if foreign.R == nil {
+					foreign.R = &gameRoundR{}
+				}
+				foreign.R.Game = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// SetCreator of the game to the related item.
+// Sets o.R.Creator to related.
+// Adds o to related.R.CreatorGames.
+func (o *Game) SetCreator(ctx context.Context, exec boil.ContextExecutor, insert bool, related *User) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"game\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"creator_uuid"}),
+		strmangle.WhereClause("\"", "\"", 2, gamePrimaryKeyColumns),
+	)
+	values := []interface{}{related.UUID, o.UUID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.CreatorUUID, related.UUID)
+	if o.R == nil {
+		o.R = &gameR{
+			Creator: related,
+		}
+	} else {
+		o.R.Creator = related
+	}
+
+	if related.R == nil {
+		related.R = &userR{
+			CreatorGames: GameSlice{o},
+		}
+	} else {
+		related.R.CreatorGames = append(related.R.CreatorGames, o)
+	}
+
+	return nil
+}
+
+// RemoveCreator relationship.
+// Sets o.R.Creator to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *Game) RemoveCreator(ctx context.Context, exec boil.ContextExecutor, related *User) error {
+	var err error
+
+	queries.SetScanner(&o.CreatorUUID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("creator_uuid")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Creator = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.CreatorGames {
+		if queries.Equal(o.CreatorUUID, ri.CreatorUUID) {
+			continue
+		}
+
+		ln := len(related.R.CreatorGames)
+		if ln > 1 && i < ln-1 {
+			related.R.CreatorGames[i] = related.R.CreatorGames[ln-1]
+		}
+		related.R.CreatorGames = related.R.CreatorGames[:ln-1]
+		break
 	}
 	return nil
 }
@@ -892,6 +1120,133 @@ func (o *Game) AddGamePlayers(ctx context.Context, exec boil.ContextExecutor, in
 			rel.R.Game = o
 		}
 	}
+	return nil
+}
+
+// AddGameRounds adds the given related objects to the existing relationships
+// of the game, optionally inserting them as new records.
+// Appends related to o.R.GameRounds.
+// Sets related.R.Game appropriately.
+func (o *Game) AddGameRounds(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*GameRound) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.GameUUID, o.UUID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"game_rounds\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"game_uuid"}),
+				strmangle.WhereClause("\"", "\"", 2, gameRoundPrimaryKeyColumns),
+			)
+			values := []interface{}{o.UUID, rel.UUID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.GameUUID, o.UUID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &gameR{
+			GameRounds: related,
+		}
+	} else {
+		o.R.GameRounds = append(o.R.GameRounds, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &gameRoundR{
+				Game: o,
+			}
+		} else {
+			rel.R.Game = o
+		}
+	}
+	return nil
+}
+
+// SetGameRounds removes all previously related items of the
+// game replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Game's GameRounds accordingly.
+// Replaces o.R.GameRounds with related.
+// Sets related.R.Game's GameRounds accordingly.
+func (o *Game) SetGameRounds(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*GameRound) error {
+	query := "update \"game_rounds\" set \"game_uuid\" = null where \"game_uuid\" = $1"
+	values := []interface{}{o.UUID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.GameRounds {
+			queries.SetScanner(&rel.GameUUID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Game = nil
+		}
+		o.R.GameRounds = nil
+	}
+
+	return o.AddGameRounds(ctx, exec, insert, related...)
+}
+
+// RemoveGameRounds relationships from objects passed in.
+// Removes related items from R.GameRounds (uses pointer comparison, removal does not keep order)
+// Sets related.R.Game.
+func (o *Game) RemoveGameRounds(ctx context.Context, exec boil.ContextExecutor, related ...*GameRound) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.GameUUID, nil)
+		if rel.R != nil {
+			rel.R.Game = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("game_uuid")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.GameRounds {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.GameRounds)
+			if ln > 1 && i < ln-1 {
+				o.R.GameRounds[i] = o.R.GameRounds[ln-1]
+			}
+			o.R.GameRounds = o.R.GameRounds[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

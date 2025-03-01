@@ -5,10 +5,12 @@ package models
 
 var TableNames = struct {
 	Game        string
-	GameBets    string
 	GamePlayers string
+	GameRounds  string
+	Users       string
 }{
 	Game:        "game",
-	GameBets:    "game_bets",
 	GamePlayers: "game_players",
+	GameRounds:  "game_rounds",
+	Users:       "users",
 }

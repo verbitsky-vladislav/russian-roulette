@@ -27,6 +27,7 @@ type GamePlayer struct {
 	GameUUID string    `boil:"game_uuid" json:"game_uuid" toml:"game_uuid" yaml:"game_uuid"`
 	UserUUID string    `boil:"user_uuid" json:"user_uuid" toml:"user_uuid" yaml:"user_uuid"`
 	HasShot  null.Bool `boil:"has_shot" json:"has_shot,omitempty" toml:"has_shot" yaml:"has_shot,omitempty"`
+	IsAlive  null.Bool `boil:"is_alive" json:"is_alive,omitempty" toml:"is_alive" yaml:"is_alive,omitempty"`
 
 	R *gamePlayerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L gamePlayerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -36,20 +37,24 @@ var GamePlayerColumns = struct {
 	GameUUID string
 	UserUUID string
 	HasShot  string
+	IsAlive  string
 }{
 	GameUUID: "game_uuid",
 	UserUUID: "user_uuid",
 	HasShot:  "has_shot",
+	IsAlive:  "is_alive",
 }
 
 var GamePlayerTableColumns = struct {
 	GameUUID string
 	UserUUID string
 	HasShot  string
+	IsAlive  string
 }{
 	GameUUID: "game_players.game_uuid",
 	UserUUID: "game_players.user_uuid",
 	HasShot:  "game_players.has_shot",
+	IsAlive:  "game_players.is_alive",
 }
 
 // Generated where
@@ -82,22 +87,27 @@ var GamePlayerWhere = struct {
 	GameUUID whereHelperstring
 	UserUUID whereHelperstring
 	HasShot  whereHelpernull_Bool
+	IsAlive  whereHelpernull_Bool
 }{
 	GameUUID: whereHelperstring{field: "\"game_players\".\"game_uuid\""},
 	UserUUID: whereHelperstring{field: "\"game_players\".\"user_uuid\""},
 	HasShot:  whereHelpernull_Bool{field: "\"game_players\".\"has_shot\""},
+	IsAlive:  whereHelpernull_Bool{field: "\"game_players\".\"is_alive\""},
 }
 
 // GamePlayerRels is where relationship names are stored.
 var GamePlayerRels = struct {
 	Game string
+	User string
 }{
 	Game: "Game",
+	User: "User",
 }
 
 // gamePlayerR is where relationships are stored.
 type gamePlayerR struct {
 	Game *Game `boil:"Game" json:"Game" toml:"Game" yaml:"Game"`
+	User *User `boil:"User" json:"User" toml:"User" yaml:"User"`
 }
 
 // NewStruct creates a new relationship struct
@@ -112,13 +122,20 @@ func (r *gamePlayerR) GetGame() *Game {
 	return r.Game
 }
 
+func (r *gamePlayerR) GetUser() *User {
+	if r == nil {
+		return nil
+	}
+	return r.User
+}
+
 // gamePlayerL is where Load methods for each relationship are stored.
 type gamePlayerL struct{}
 
 var (
-	gamePlayerAllColumns            = []string{"game_uuid", "user_uuid", "has_shot"}
+	gamePlayerAllColumns            = []string{"game_uuid", "user_uuid", "has_shot", "is_alive"}
 	gamePlayerColumnsWithoutDefault = []string{"game_uuid", "user_uuid"}
-	gamePlayerColumnsWithDefault    = []string{"has_shot"}
+	gamePlayerColumnsWithDefault    = []string{"has_shot", "is_alive"}
 	gamePlayerPrimaryKeyColumns     = []string{"game_uuid", "user_uuid"}
 	gamePlayerGeneratedColumns      = []string{}
 )
@@ -439,6 +456,17 @@ func (o *GamePlayer) Game(mods ...qm.QueryMod) gameQuery {
 	return Games(queryMods...)
 }
 
+// User pointed to by the foreign key.
+func (o *GamePlayer) User(mods ...qm.QueryMod) userQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"uuid\" = ?", o.UserUUID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Users(queryMods...)
+}
+
 // LoadGame allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (gamePlayerL) LoadGame(ctx context.Context, e boil.ContextExecutor, singular bool, maybeGamePlayer interface{}, mods queries.Applicator) error {
@@ -559,6 +587,126 @@ func (gamePlayerL) LoadGame(ctx context.Context, e boil.ContextExecutor, singula
 	return nil
 }
 
+// LoadUser allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (gamePlayerL) LoadUser(ctx context.Context, e boil.ContextExecutor, singular bool, maybeGamePlayer interface{}, mods queries.Applicator) error {
+	var slice []*GamePlayer
+	var object *GamePlayer
+
+	if singular {
+		var ok bool
+		object, ok = maybeGamePlayer.(*GamePlayer)
+		if !ok {
+			object = new(GamePlayer)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeGamePlayer)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeGamePlayer))
+			}
+		}
+	} else {
+		s, ok := maybeGamePlayer.(*[]*GamePlayer)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeGamePlayer)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeGamePlayer))
+			}
+		}
+	}
+
+	args := make(map[interface{}]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &gamePlayerR{}
+		}
+		args[object.UserUUID] = struct{}{}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &gamePlayerR{}
+			}
+
+			args[obj.UserUUID] = struct{}{}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]interface{}, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`users`),
+		qm.WhereIn(`users.uuid in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load User")
+	}
+
+	var resultSlice []*User
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice User")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for users")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for users")
+	}
+
+	if len(userAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.User = foreign
+		if foreign.R == nil {
+			foreign.R = &userR{}
+		}
+		foreign.R.GamePlayers = append(foreign.R.GamePlayers, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.UserUUID == foreign.UUID {
+				local.R.User = foreign
+				if foreign.R == nil {
+					foreign.R = &userR{}
+				}
+				foreign.R.GamePlayers = append(foreign.R.GamePlayers, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetGame of the gamePlayer to the related item.
 // Sets o.R.Game to related.
 // Adds o to related.R.GamePlayers.
@@ -597,6 +745,53 @@ func (o *GamePlayer) SetGame(ctx context.Context, exec boil.ContextExecutor, ins
 
 	if related.R == nil {
 		related.R = &gameR{
+			GamePlayers: GamePlayerSlice{o},
+		}
+	} else {
+		related.R.GamePlayers = append(related.R.GamePlayers, o)
+	}
+
+	return nil
+}
+
+// SetUser of the gamePlayer to the related item.
+// Sets o.R.User to related.
+// Adds o to related.R.GamePlayers.
+func (o *GamePlayer) SetUser(ctx context.Context, exec boil.ContextExecutor, insert bool, related *User) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"game_players\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"user_uuid"}),
+		strmangle.WhereClause("\"", "\"", 2, gamePlayerPrimaryKeyColumns),
+	)
+	values := []interface{}{related.UUID, o.GameUUID, o.UserUUID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.UserUUID = related.UUID
+	if o.R == nil {
+		o.R = &gamePlayerR{
+			User: related,
+		}
+	} else {
+		o.R.User = related
+	}
+
+	if related.R == nil {
+		related.R = &userR{
 			GamePlayers: GamePlayerSlice{o},
 		}
 	} else {

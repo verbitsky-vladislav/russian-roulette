@@ -1,10 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 CREATE TABLE game (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    creator_uuid UUID NOT NULL,
+    creator_uuid UUID REFERENCES users(uuid) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL CHECK (status IN ('waiting', 'active', 'finished', 'cancelled')),
     bet_amount DECIMAL(10,2) NOT NULL,
     bullet_count INT NOT NULL,
@@ -13,24 +11,18 @@ CREATE TABLE game (
 
 CREATE TABLE game_players (
     game_uuid UUID REFERENCES game(uuid) ON DELETE CASCADE,
-    user_uuid UUID NOT NULL,
+    user_uuid UUID REFERENCES users(uuid) ON DELETE CASCADE,
     has_shot BOOLEAN DEFAULT FALSE,
-    PRIMARY KEY (game_uuid, user_uuid)
-);
-
-CREATE TABLE game_bets (
-    game_uuid UUID REFERENCES game(uuid) ON DELETE CASCADE,
-    user_uuid UUID NOT NULL,
-    bet_amount DECIMAL(10,2) NOT NULL,
+    is_alive BOOLEAN DEFAULT TRUE,
     PRIMARY KEY (game_uuid, user_uuid)
 );
 
 CREATE TABLE game_rounds (
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     game_uuid UUID REFERENCES game(uuid) ON DELETE CASCADE,
-    game_id INT REFERENCES game(uuid) ON DELETE CASCADE,
-    user_id BIGINT REFERENCES users(telegram_id),
-    action VARCHAR(10) CHECK (action IN ('pull', 'pass')), -- действие игрока
-    result VARCHAR(10) CHECK (result IN ('miss', 'shot', NULL)), -- попал или нет
+    user_uuid UUID REFERENCES users(uuid),
+    action VARCHAR(10) CHECK (action IN ('pull', 'pass')),
+    result VARCHAR(10) CHECK (result IN ('miss', 'shot', NULL)),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
