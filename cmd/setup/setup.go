@@ -7,10 +7,23 @@ import (
 	"russian-roulette/internal/bot/handler/commands"
 	"russian-roulette/internal/config"
 	"russian-roulette/internal/repository"
+	"russian-roulette/internal/repository/reader"
+	"russian-roulette/internal/repository/writer"
 )
 
 func Setup(cfg *config.Config, logger *zap.Logger) {
 	// ctx
+
+	// init Ethereum clients
+	_, err := reader.NewEthereumReader(cfg.Blockchain.RPCURL, cfg.Blockchain.ContractAddress)
+	if err != nil {
+		logger.Fatal("Failed to initialize Ethereum reader", zap.Error(err))
+	}
+
+	_, err = writer.NewEthereumWriter(cfg.Blockchain.RPCURL, cfg.Blockchain.ContractAddress, cfg.Blockchain.PrivateKey)
+	if err != nil {
+		logger.Fatal("Failed to initialize Ethereum writer", zap.Error(err))
+	}
 
 	// init db
 	db := repository.New(&cfg.Database, logger)

@@ -59,3 +59,9 @@ tasks:
   seed:
     desc: "Run seed."
     cmd: go run ./internal/repository/seed/seed.go
+
+
+  abi:
+    desc: "Сгенерировать Go-биндинги из ABI"
+    cmds:
+      - ./config/generate-bindings.sh
