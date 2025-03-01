@@ -6,7 +6,9 @@ import (
 	"go.uber.org/zap"
 	"russian-roulette/internal/bot/custom_errors"
 	"russian-roulette/internal/bot/middleware"
+	telegramUtils "russian-roulette/internal/bot/utils"
 	"russian-roulette/internal/service"
+	projectUtils "russian-roulette/internal/utils"
 )
 
 type Commands struct {
@@ -38,7 +40,7 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 			cmd.logger.Debug("/start : command was handled")
 			// Команда для запуска бота.
 			// Должна отправлять пользователю приветственное сообщение и правила игры.
-			err := cmd.Start()
+			err := cmd.chatOnly(cmd.Start, ctx, message)
 			return err
 		}
 	case "help":
@@ -141,4 +143,47 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 	default:
 		return custom_errors.ErrNoCommandFound
 	}
+}
+
+func (cmd *Commands) chatOnly(next func(ctx context.Context, message *tgbotapi.Message) error, ctx context.Context, message *tgbotapi.Message) error {
+	if message.Chat.Type == "group" || message.Chat.Type == "supergroup" {
+
+		err := telegramUtils.SendMessage(cmd.bot, &telegramUtils.Message{
+			ChatId:      message.Chat.ID,
+			Text:        custom_errors.ErrChatOnlyCommand.Error(),
+			MessageType: projectUtils.ToPtr(telegramUtils.Deletable),
+			ParseMode:   projectUtils.ToPtr(""),
+		}, cmd.logger)
+		if err != nil {
+			cmd.logger.Warn("chatOnly: failed to send error message", zap.Error(err))
+			return err
+		}
+
+		telegramUtils.DeleteMessage(cmd.bot, message, cmd.logger)
+
+		return nil
+	}
+
+	return next(ctx, message)
+}
+
+func (cmd *Commands) groupOnly(next func(ctx context.Context, message *tgbotapi.Message) error, ctx context.Context, message *tgbotapi.Message) error {
+	if !(message.Chat.Type == "group") || !(message.Chat.Type == "supergroup") {
+		err := telegramUtils.SendMessage(cmd.bot, &telegramUtils.Message{
+			ChatId:      message.Chat.ID,
+			Text:        custom_errors.ErrGroupOnlyCommand.Error(),
+			MessageType: projectUtils.ToPtr(telegramUtils.Deletable),
+			ParseMode:   projectUtils.ToPtr(""),
+		}, cmd.logger)
+		if err != nil {
+			cmd.logger.Warn("groupOnly: failed to send error message", zap.Error(err))
+			return err
+		}
+
+		telegramUtils.DeleteMessage(cmd.bot, message, cmd.logger)
+
+		return nil
+	}
+
+	return next(ctx, message)
 }

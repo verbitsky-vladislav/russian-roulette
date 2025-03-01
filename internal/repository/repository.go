@@ -54,4 +54,10 @@ type (
 		Create(ctx context.Context, newRound *gameEntities.CreateGameRound) (*gameEntities.GameRound, error)
 		GetAll(ctx context.Context, filters *gameEntities.GetGameRounds) ([]*gameEntities.GameRound, error)
 	}
+	GamePlayerRepository interface {
+		Create(ctx context.Context, newPlayer *gameEntities.CreateGamePlayers) (*gameEntities.GamePlayers, error)
+		Update(ctx context.Context, upd *gameEntities.UpdateGamePlayers) (*gameEntities.GamePlayers, error)
+		GetAll(ctx context.Context, filters *gameEntities.GetGamePlayersFilters) ([]*gameEntities.GamePlayers, error)
+		GetByGameUUID(ctx context.Context, gameUuid string) ([]*gameEntities.GamePlayers, error)
+	}
 )

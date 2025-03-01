@@ -55,6 +55,8 @@ func SendMessage(b *tgbotapi.BotAPI, m *Message, logger *zap.Logger) error {
 		msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	}
 
+	logger.Debug("message before sending: ", zap.Any("message", msg))
+
 	// Отправляем сообщение
 	sentMsg, err := b.Send(msg)
 	if err != nil {
@@ -66,9 +68,8 @@ func SendMessage(b *tgbotapi.BotAPI, m *Message, logger *zap.Logger) error {
 		go func() {
 			time.Sleep(7 * time.Second)
 			deleteMsg := tgbotapi.NewDeleteMessage(sentMsg.Chat.ID, sentMsg.MessageID)
-			_, err = b.Send(deleteMsg)
+			_, err = b.Request(deleteMsg)
 			if err != nil {
-				logger.Warn("Error deleting old system message", zap.Error(err))
 				return
 			}
 			return

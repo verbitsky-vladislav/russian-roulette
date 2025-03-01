@@ -24,21 +24,24 @@ import (
 
 // GamePlayer is an object representing the database table.
 type GamePlayer struct {
-	GameUUID string    `boil:"game_uuid" json:"game_uuid" toml:"game_uuid" yaml:"game_uuid"`
-	UserUUID string    `boil:"user_uuid" json:"user_uuid" toml:"user_uuid" yaml:"user_uuid"`
-	HasShot  null.Bool `boil:"has_shot" json:"has_shot,omitempty" toml:"has_shot" yaml:"has_shot,omitempty"`
-	IsAlive  null.Bool `boil:"is_alive" json:"is_alive,omitempty" toml:"is_alive" yaml:"is_alive,omitempty"`
+	UUID     string      `boil:"uuid" json:"uuid" toml:"uuid" yaml:"uuid"`
+	GameUUID null.String `boil:"game_uuid" json:"game_uuid,omitempty" toml:"game_uuid" yaml:"game_uuid,omitempty"`
+	UserUUID null.String `boil:"user_uuid" json:"user_uuid,omitempty" toml:"user_uuid" yaml:"user_uuid,omitempty"`
+	HasShot  null.Bool   `boil:"has_shot" json:"has_shot,omitempty" toml:"has_shot" yaml:"has_shot,omitempty"`
+	IsAlive  null.Bool   `boil:"is_alive" json:"is_alive,omitempty" toml:"is_alive" yaml:"is_alive,omitempty"`
 
 	R *gamePlayerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L gamePlayerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var GamePlayerColumns = struct {
+	UUID     string
 	GameUUID string
 	UserUUID string
 	HasShot  string
 	IsAlive  string
 }{
+	UUID:     "uuid",
 	GameUUID: "game_uuid",
 	UserUUID: "user_uuid",
 	HasShot:  "has_shot",
@@ -46,11 +49,13 @@ var GamePlayerColumns = struct {
 }
 
 var GamePlayerTableColumns = struct {
+	UUID     string
 	GameUUID string
 	UserUUID string
 	HasShot  string
 	IsAlive  string
 }{
+	UUID:     "game_players.uuid",
 	GameUUID: "game_players.game_uuid",
 	UserUUID: "game_players.user_uuid",
 	HasShot:  "game_players.has_shot",
@@ -84,13 +89,15 @@ func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsN
 func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var GamePlayerWhere = struct {
-	GameUUID whereHelperstring
-	UserUUID whereHelperstring
+	UUID     whereHelperstring
+	GameUUID whereHelpernull_String
+	UserUUID whereHelpernull_String
 	HasShot  whereHelpernull_Bool
 	IsAlive  whereHelpernull_Bool
 }{
-	GameUUID: whereHelperstring{field: "\"game_players\".\"game_uuid\""},
-	UserUUID: whereHelperstring{field: "\"game_players\".\"user_uuid\""},
+	UUID:     whereHelperstring{field: "\"game_players\".\"uuid\""},
+	GameUUID: whereHelpernull_String{field: "\"game_players\".\"game_uuid\""},
+	UserUUID: whereHelpernull_String{field: "\"game_players\".\"user_uuid\""},
 	HasShot:  whereHelpernull_Bool{field: "\"game_players\".\"has_shot\""},
 	IsAlive:  whereHelpernull_Bool{field: "\"game_players\".\"is_alive\""},
 }
@@ -133,10 +140,10 @@ func (r *gamePlayerR) GetUser() *User {
 type gamePlayerL struct{}
 
 var (
-	gamePlayerAllColumns            = []string{"game_uuid", "user_uuid", "has_shot", "is_alive"}
-	gamePlayerColumnsWithoutDefault = []string{"game_uuid", "user_uuid"}
-	gamePlayerColumnsWithDefault    = []string{"has_shot", "is_alive"}
-	gamePlayerPrimaryKeyColumns     = []string{"game_uuid", "user_uuid"}
+	gamePlayerAllColumns            = []string{"uuid", "game_uuid", "user_uuid", "has_shot", "is_alive"}
+	gamePlayerColumnsWithoutDefault = []string{}
+	gamePlayerColumnsWithDefault    = []string{"uuid", "game_uuid", "user_uuid", "has_shot", "is_alive"}
+	gamePlayerPrimaryKeyColumns     = []string{"uuid"}
 	gamePlayerGeneratedColumns      = []string{}
 )
 
@@ -500,7 +507,9 @@ func (gamePlayerL) LoadGame(ctx context.Context, e boil.ContextExecutor, singula
 		if object.R == nil {
 			object.R = &gamePlayerR{}
 		}
-		args[object.GameUUID] = struct{}{}
+		if !queries.IsNil(object.GameUUID) {
+			args[object.GameUUID] = struct{}{}
+		}
 
 	} else {
 		for _, obj := range slice {
@@ -508,7 +517,9 @@ func (gamePlayerL) LoadGame(ctx context.Context, e boil.ContextExecutor, singula
 				obj.R = &gamePlayerR{}
 			}
 
-			args[obj.GameUUID] = struct{}{}
+			if !queries.IsNil(obj.GameUUID) {
+				args[obj.GameUUID] = struct{}{}
+			}
 
 		}
 	}
@@ -573,7 +584,7 @@ func (gamePlayerL) LoadGame(ctx context.Context, e boil.ContextExecutor, singula
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.GameUUID == foreign.UUID {
+			if queries.Equal(local.GameUUID, foreign.UUID) {
 				local.R.Game = foreign
 				if foreign.R == nil {
 					foreign.R = &gameR{}
@@ -620,7 +631,9 @@ func (gamePlayerL) LoadUser(ctx context.Context, e boil.ContextExecutor, singula
 		if object.R == nil {
 			object.R = &gamePlayerR{}
 		}
-		args[object.UserUUID] = struct{}{}
+		if !queries.IsNil(object.UserUUID) {
+			args[object.UserUUID] = struct{}{}
+		}
 
 	} else {
 		for _, obj := range slice {
@@ -628,7 +641,9 @@ func (gamePlayerL) LoadUser(ctx context.Context, e boil.ContextExecutor, singula
 				obj.R = &gamePlayerR{}
 			}
 
-			args[obj.UserUUID] = struct{}{}
+			if !queries.IsNil(obj.UserUUID) {
+				args[obj.UserUUID] = struct{}{}
+			}
 
 		}
 	}
@@ -693,7 +708,7 @@ func (gamePlayerL) LoadUser(ctx context.Context, e boil.ContextExecutor, singula
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.UserUUID == foreign.UUID {
+			if queries.Equal(local.UserUUID, foreign.UUID) {
 				local.R.User = foreign
 				if foreign.R == nil {
 					foreign.R = &userR{}
@@ -723,7 +738,7 @@ func (o *GamePlayer) SetGame(ctx context.Context, exec boil.ContextExecutor, ins
 		strmangle.SetParamNames("\"", "\"", 1, []string{"game_uuid"}),
 		strmangle.WhereClause("\"", "\"", 2, gamePlayerPrimaryKeyColumns),
 	)
-	values := []interface{}{related.UUID, o.GameUUID, o.UserUUID}
+	values := []interface{}{related.UUID, o.UUID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -734,7 +749,7 @@ func (o *GamePlayer) SetGame(ctx context.Context, exec boil.ContextExecutor, ins
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.GameUUID = related.UUID
+	queries.Assign(&o.GameUUID, related.UUID)
 	if o.R == nil {
 		o.R = &gamePlayerR{
 			Game: related,
@@ -754,6 +769,39 @@ func (o *GamePlayer) SetGame(ctx context.Context, exec boil.ContextExecutor, ins
 	return nil
 }
 
+// RemoveGame relationship.
+// Sets o.R.Game to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *GamePlayer) RemoveGame(ctx context.Context, exec boil.ContextExecutor, related *Game) error {
+	var err error
+
+	queries.SetScanner(&o.GameUUID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("game_uuid")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Game = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.GamePlayers {
+		if queries.Equal(o.GameUUID, ri.GameUUID) {
+			continue
+		}
+
+		ln := len(related.R.GamePlayers)
+		if ln > 1 && i < ln-1 {
+			related.R.GamePlayers[i] = related.R.GamePlayers[ln-1]
+		}
+		related.R.GamePlayers = related.R.GamePlayers[:ln-1]
+		break
+	}
+	return nil
+}
+
 // SetUser of the gamePlayer to the related item.
 // Sets o.R.User to related.
 // Adds o to related.R.GamePlayers.
@@ -770,7 +818,7 @@ func (o *GamePlayer) SetUser(ctx context.Context, exec boil.ContextExecutor, ins
 		strmangle.SetParamNames("\"", "\"", 1, []string{"user_uuid"}),
 		strmangle.WhereClause("\"", "\"", 2, gamePlayerPrimaryKeyColumns),
 	)
-	values := []interface{}{related.UUID, o.GameUUID, o.UserUUID}
+	values := []interface{}{related.UUID, o.UUID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -781,7 +829,7 @@ func (o *GamePlayer) SetUser(ctx context.Context, exec boil.ContextExecutor, ins
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.UserUUID = related.UUID
+	queries.Assign(&o.UserUUID, related.UUID)
 	if o.R == nil {
 		o.R = &gamePlayerR{
 			User: related,
@@ -801,6 +849,39 @@ func (o *GamePlayer) SetUser(ctx context.Context, exec boil.ContextExecutor, ins
 	return nil
 }
 
+// RemoveUser relationship.
+// Sets o.R.User to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *GamePlayer) RemoveUser(ctx context.Context, exec boil.ContextExecutor, related *User) error {
+	var err error
+
+	queries.SetScanner(&o.UserUUID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("user_uuid")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.User = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.GamePlayers {
+		if queries.Equal(o.UserUUID, ri.UserUUID) {
+			continue
+		}
+
+		ln := len(related.R.GamePlayers)
+		if ln > 1 && i < ln-1 {
+			related.R.GamePlayers[i] = related.R.GamePlayers[ln-1]
+		}
+		related.R.GamePlayers = related.R.GamePlayers[:ln-1]
+		break
+	}
+	return nil
+}
+
 // GamePlayers retrieves all the records using an executor.
 func GamePlayers(mods ...qm.QueryMod) gamePlayerQuery {
 	mods = append(mods, qm.From("\"game_players\""))
@@ -814,7 +895,7 @@ func GamePlayers(mods ...qm.QueryMod) gamePlayerQuery {
 
 // FindGamePlayer retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindGamePlayer(ctx context.Context, exec boil.ContextExecutor, gameUUID string, userUUID string, selectCols ...string) (*GamePlayer, error) {
+func FindGamePlayer(ctx context.Context, exec boil.ContextExecutor, uUID string, selectCols ...string) (*GamePlayer, error) {
 	gamePlayerObj := &GamePlayer{}
 
 	sel := "*"
@@ -822,10 +903,10 @@ func FindGamePlayer(ctx context.Context, exec boil.ContextExecutor, gameUUID str
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"game_players\" where \"game_uuid\"=$1 AND \"user_uuid\"=$2", sel,
+		"select %s from \"game_players\" where \"uuid\"=$1", sel,
 	)
 
-	q := queries.Raw(query, gameUUID, userUUID)
+	q := queries.Raw(query, uUID)
 
 	err := q.Bind(ctx, exec, gamePlayerObj)
 	if err != nil {
@@ -1183,7 +1264,7 @@ func (o *GamePlayer) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), gamePlayerPrimaryKeyMapping)
-	sql := "DELETE FROM \"game_players\" WHERE \"game_uuid\"=$1 AND \"user_uuid\"=$2"
+	sql := "DELETE FROM \"game_players\" WHERE \"uuid\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1280,7 +1361,7 @@ func (o GamePlayerSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *GamePlayer) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindGamePlayer(ctx, exec, o.GameUUID, o.UserUUID)
+	ret, err := FindGamePlayer(ctx, exec, o.UUID)
 	if err != nil {
 		return err
 	}
@@ -1319,16 +1400,16 @@ func (o *GamePlayerSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 }
 
 // GamePlayerExists checks if the GamePlayer row exists.
-func GamePlayerExists(ctx context.Context, exec boil.ContextExecutor, gameUUID string, userUUID string) (bool, error) {
+func GamePlayerExists(ctx context.Context, exec boil.ContextExecutor, uUID string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"game_players\" where \"game_uuid\"=$1 AND \"user_uuid\"=$2 limit 1)"
+	sql := "select exists(select 1 from \"game_players\" where \"uuid\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, gameUUID, userUUID)
+		fmt.Fprintln(writer, uUID)
 	}
-	row := exec.QueryRowContext(ctx, sql, gameUUID, userUUID)
+	row := exec.QueryRowContext(ctx, sql, uUID)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1340,5 +1421,5 @@ func GamePlayerExists(ctx context.Context, exec boil.ContextExecutor, gameUUID s
 
 // Exists checks if the GamePlayer row exists.
 func (o *GamePlayer) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return GamePlayerExists(ctx, exec, o.GameUUID, o.UserUUID)
+	return GamePlayerExists(ctx, exec, o.UUID)
 }

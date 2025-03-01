@@ -31,4 +31,12 @@ var (
 		Code:    "ErrNoCommandFound",
 		Message: fmt.Sprintf("Не удалось найти такую команду. Список команд тут /help"),
 	}
+	ErrChatOnlyCommand = CustomError{
+		Code:    "ErrChatOnlyCommand",
+		Message: fmt.Sprintf("Эту команду можно вызвать только внутри диалога с ботом @eth_russian_roulette_bot"),
+	}
+	ErrGroupOnlyCommand = CustomError{
+		Code:    "ErrChatOnlyCommand",
+		Message: fmt.Sprintf("Эту команду можно вызвать только внутри группового чата @eth_russian_roulette"),
+	}
 )

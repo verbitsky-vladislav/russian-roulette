@@ -778,7 +778,7 @@ func (userL) LoadGamePlayers(ctx context.Context, e boil.ContextExecutor, singul
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.UUID == foreign.UserUUID {
+			if queries.Equal(local.UUID, foreign.UserUUID) {
 				local.R.GamePlayers = append(local.R.GamePlayers, foreign)
 				if foreign.R == nil {
 					foreign.R = &gamePlayerR{}
@@ -1040,7 +1040,7 @@ func (o *User) AddGamePlayers(ctx context.Context, exec boil.ContextExecutor, in
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.UserUUID = o.UUID
+			queries.Assign(&rel.UserUUID, o.UUID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1050,7 +1050,7 @@ func (o *User) AddGamePlayers(ctx context.Context, exec boil.ContextExecutor, in
 				strmangle.SetParamNames("\"", "\"", 1, []string{"user_uuid"}),
 				strmangle.WhereClause("\"", "\"", 2, gamePlayerPrimaryKeyColumns),
 			)
-			values := []interface{}{o.UUID, rel.GameUUID, rel.UserUUID}
+			values := []interface{}{o.UUID, rel.UUID}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1061,7 +1061,7 @@ func (o *User) AddGamePlayers(ctx context.Context, exec boil.ContextExecutor, in
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.UserUUID = o.UUID
+			queries.Assign(&rel.UserUUID, o.UUID)
 		}
 	}
 
@@ -1082,6 +1082,80 @@ func (o *User) AddGamePlayers(ctx context.Context, exec boil.ContextExecutor, in
 			rel.R.User = o
 		}
 	}
+	return nil
+}
+
+// SetGamePlayers removes all previously related items of the
+// user replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.User's GamePlayers accordingly.
+// Replaces o.R.GamePlayers with related.
+// Sets related.R.User's GamePlayers accordingly.
+func (o *User) SetGamePlayers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*GamePlayer) error {
+	query := "update \"game_players\" set \"user_uuid\" = null where \"user_uuid\" = $1"
+	values := []interface{}{o.UUID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.GamePlayers {
+			queries.SetScanner(&rel.UserUUID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.User = nil
+		}
+		o.R.GamePlayers = nil
+	}
+
+	return o.AddGamePlayers(ctx, exec, insert, related...)
+}
+
+// RemoveGamePlayers relationships from objects passed in.
+// Removes related items from R.GamePlayers (uses pointer comparison, removal does not keep order)
+// Sets related.R.User.
+func (o *User) RemoveGamePlayers(ctx context.Context, exec boil.ContextExecutor, related ...*GamePlayer) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.UserUUID, nil)
+		if rel.R != nil {
+			rel.R.User = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("user_uuid")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.GamePlayers {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.GamePlayers)
+			if ln > 1 && i < ln-1 {
+				o.R.GamePlayers[i] = o.R.GamePlayers[ln-1]
+			}
+			o.R.GamePlayers = o.R.GamePlayers[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

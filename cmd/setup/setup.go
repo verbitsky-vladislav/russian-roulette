@@ -11,7 +11,6 @@ import (
 
 func Setup(cfg *config.Config, logger *zap.Logger) {
 	// ctx
-	//ctx := context.Background()
 
 	// init db
 	db := repository.New(&cfg.Database, logger)
@@ -21,6 +20,8 @@ func Setup(cfg *config.Config, logger *zap.Logger) {
 			return
 		}
 	}()
+
+	// repositories
 
 	// init telegram bot
 	botInstance, err := tgbotapi.NewBotAPI(cfg.Telegram.Token)

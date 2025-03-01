@@ -10,11 +10,11 @@ CREATE TABLE game (
 );
 
 CREATE TABLE game_players (
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     game_uuid UUID REFERENCES game(uuid) ON DELETE CASCADE,
     user_uuid UUID REFERENCES users(uuid) ON DELETE CASCADE,
     has_shot BOOLEAN DEFAULT FALSE,
-    is_alive BOOLEAN DEFAULT TRUE,
-    PRIMARY KEY (game_uuid, user_uuid)
+    is_alive BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE game_rounds (
