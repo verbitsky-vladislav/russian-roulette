@@ -19,7 +19,7 @@ func AuthMiddleware(userService service.UserService) func(HandlerFunc) HandlerFu
 			}
 
 			// Получаем пользователя из базы
-			user, err := userService.GetUserByChatId(message.From.ID)
+			user, err := userService.GetUserByChatId(ctx, message.From.ID)
 			if err != nil {
 				if errors.As(err, &sql.ErrNoRows) {
 					return custom_errors.ErrUserNotFound

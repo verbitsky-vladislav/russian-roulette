@@ -7,23 +7,20 @@ import (
 	"russian-roulette/internal/bot/handler/commands"
 	"russian-roulette/internal/config"
 	"russian-roulette/internal/repository"
-	"russian-roulette/internal/repository/reader"
-	"russian-roulette/internal/repository/writer"
+	userRepository "russian-roulette/internal/repository/user"
+	userService "russian-roulette/internal/service/user"
 )
 
 func Setup(cfg *config.Config, logger *zap.Logger) {
-	// ctx
-
 	// init Ethereum clients
-	_, err := reader.NewEthereumReader(cfg.Blockchain.RPCURL, cfg.Blockchain.ContractAddress)
-	if err != nil {
-		logger.Fatal("Failed to initialize Ethereum reader", zap.Error(err))
-	}
-
-	_, err = writer.NewEthereumWriter(cfg.Blockchain.RPCURL, cfg.Blockchain.ContractAddress, cfg.Blockchain.PrivateKey)
-	if err != nil {
-		logger.Fatal("Failed to initialize Ethereum writer", zap.Error(err))
-	}
+	//_, err := reader.NewEthereumReader(cfg.Blockchain.RPCURL, cfg.Blockchain.ContractAddress)
+	//if err != nil {
+	//	logger.Fatal("Failed to initialize Ethereum reader", zap.Error(err))
+	//}
+	//_, err = writer.NewEthereumWriter(cfg.Blockchain.RPCURL, cfg.Blockchain.ContractAddress, cfg.Blockchain.PrivateKey)
+	//if err != nil {
+	//	logger.Fatal("Failed to initialize Ethereum writer", zap.Error(err))
+	//}
 
 	// init db
 	db := repository.New(&cfg.Database, logger)
@@ -35,6 +32,10 @@ func Setup(cfg *config.Config, logger *zap.Logger) {
 	}()
 
 	// repositories
+	userRepo := userRepository.NewUserRepository(db.DB, logger)
+
+	// service
+	userUc := userService.NewUserService(userRepo, logger)
 
 	// init telegram bot
 	botInstance, err := tgbotapi.NewBotAPI(cfg.Telegram.Token)
@@ -43,7 +44,7 @@ func Setup(cfg *config.Config, logger *zap.Logger) {
 	}
 
 	// handlers
-	commandsHandler := commands.NewCommandsHandler(botInstance, logger)
+	commandsHandler := commands.NewCommandsHandler(botInstance, userUc, logger)
 
 	// Инициализация сервиса телеграм бота
 	b := bot.New(

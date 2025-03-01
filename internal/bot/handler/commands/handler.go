@@ -17,10 +17,11 @@ type Commands struct {
 	logger      *zap.Logger
 }
 
-func NewCommandsHandler(bot *tgbotapi.BotAPI, logger *zap.Logger) *Commands {
+func NewCommandsHandler(bot *tgbotapi.BotAPI, userService service.UserService, logger *zap.Logger) *Commands {
 	return &Commands{
-		bot:    bot,
-		logger: logger,
+		bot:         bot,
+		userService: userService,
+		logger:      logger,
 	}
 }
 

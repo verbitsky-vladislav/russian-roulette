@@ -89,7 +89,6 @@ func (h *Handler) handleCommand(message *tgbotapi.Message) {
 			}, h.logger)
 			return
 		}
-		h.logger.Warn("error in command handler", zap.Error(err))
 		return
 	}
 }

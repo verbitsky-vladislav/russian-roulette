@@ -12,24 +12,22 @@ import (
 type UserService struct {
 	userRepo repository.UserRepository
 	logger   *zap.Logger
-	ctx      context.Context
 }
 
-func NewUserService(userRepo repository.UserRepository, logger *zap.Logger, ctx context.Context) *UserService {
+func NewUserService(userRepo repository.UserRepository, logger *zap.Logger) *UserService {
 	return &UserService{
 		userRepo: userRepo,
 		logger:   logger,
-		ctx:      ctx,
 	}
 }
 
-func (s *UserService) RegisterUser(newUser *userEntities.CreateUser) (*userEntities.User, error) {
-	u, err := s.userRepo.Create(s.ctx, newUser)
+func (s *UserService) RegisterUser(ctx context.Context, newUser *userEntities.CreateUser) (*userEntities.User, error) {
+	u, err := s.userRepo.Create(ctx, newUser)
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23505" { // user already exists
-				u, err = s.userRepo.GetByChatID(s.ctx, newUser.ChatId)
+				u, err = s.userRepo.GetByChatID(ctx, newUser.ChatId)
 				return u, nil
 			}
 		}
@@ -39,8 +37,8 @@ func (s *UserService) RegisterUser(newUser *userEntities.CreateUser) (*userEntit
 	return u, nil
 }
 
-func (s *UserService) GetUserByChatId(chatId int64) (*userEntities.User, error) {
-	u, err := s.userRepo.GetByChatID(s.ctx, chatId)
+func (s *UserService) GetUserByChatId(ctx context.Context, chatId int64) (*userEntities.User, error) {
+	u, err := s.userRepo.GetByChatID(ctx, chatId)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ module russian-roulette
 go 1.23.3
 
 require (
+	github.com/ericlagergren/decimal v0.0.0-20240411145413-00de7ca16731
 	github.com/ethereum/go-ethereum v1.15.3
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
@@ -25,7 +26,6 @@ require (
 	github.com/crate-crypto/go-kzg-4844 v1.1.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.7.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
-	github.com/ericlagergren/decimal v0.0.0-20240411145413-00de7ca16731 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.3 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect

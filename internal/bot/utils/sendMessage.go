@@ -55,8 +55,6 @@ func SendMessage(b *tgbotapi.BotAPI, m *Message, logger *zap.Logger) error {
 		msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	}
 
-	logger.Debug("message before sending: ", zap.Any("message", msg))
-
 	// Отправляем сообщение
 	sentMsg, err := b.Send(msg)
 	if err != nil {

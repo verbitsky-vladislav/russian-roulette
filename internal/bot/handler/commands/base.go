@@ -9,7 +9,7 @@ import (
 )
 
 func (cmd *Commands) Start(ctx context.Context, message *tgbotapi.Message) error {
-	u, err := cmd.userService.RegisterUser(&userEntities.CreateUser{
+	u, err := cmd.userService.RegisterUser(ctx, &userEntities.CreateUser{
 		ChatId: message.Chat.ID,
 		TgName: message.Chat.UserName,
 	})
