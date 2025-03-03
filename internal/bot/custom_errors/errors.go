@@ -40,3 +40,11 @@ var (
 		Message: fmt.Sprintf("Эту команду можно вызвать только внутри группового чата @eth_russian_roulette"),
 	}
 )
+
+// Inline errors
+var (
+	ErrGameIsNotActive = CustomError{
+		Code:    "ErrGameIsNotActive",
+		Message: fmt.Sprintf("Кажется игра уже не существует. Попробуйте поискать другую игру"),
+	}
+)

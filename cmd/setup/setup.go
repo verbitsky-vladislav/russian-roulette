@@ -4,10 +4,13 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 	"russian-roulette/internal/bot"
+	"russian-roulette/internal/bot/handler/callbacks"
 	"russian-roulette/internal/bot/handler/commands"
 	"russian-roulette/internal/config"
 	"russian-roulette/internal/repository"
+	gameRepository "russian-roulette/internal/repository/game"
 	userRepository "russian-roulette/internal/repository/user"
+	gameService "russian-roulette/internal/service/game"
 	userService "russian-roulette/internal/service/user"
 )
 
@@ -33,9 +36,13 @@ func Setup(cfg *config.Config, logger *zap.Logger) {
 
 	// repositories
 	userRepo := userRepository.NewUserRepository(db.DB, logger)
+	gameRepo := gameRepository.NewGameRepository(db.DB, logger)
+	gameRoundsRepo := gameRepository.NewGameRoundRepository(db.DB, logger)
+	gamePlayersRepo := gameRepository.NewGamePlayersRepository(db.DB, logger)
 
 	// service
-	userUc := userService.NewUserService(userRepo, logger)
+	gameUc := gameService.NewGameService(gameRepo, gameRoundsRepo, gamePlayersRepo, logger)
+	userUc := userService.NewUserService(userRepo, gameUc, logger)
 
 	// init telegram bot
 	botInstance, err := tgbotapi.NewBotAPI(cfg.Telegram.Token)
@@ -44,11 +51,13 @@ func Setup(cfg *config.Config, logger *zap.Logger) {
 	}
 
 	// handlers
-	commandsHandler := commands.NewCommandsHandler(botInstance, userUc, logger)
+	commandsHandler := commands.NewCommandsHandler(botInstance, userUc, gameUc, logger)
+	callbacksHandler := callbacks.NewCallbacksHandler(botInstance, userUc, gameUc, logger)
 
 	// Инициализация сервиса телеграм бота
 	b := bot.New(
 		commandsHandler,
+		callbacksHandler,
 
 		botInstance, cfg, logger,
 	)

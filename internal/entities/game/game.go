@@ -5,10 +5,19 @@ import (
 	"time"
 )
 
+type GameStatus string
+
+var (
+	Waiting  GameStatus = "waiting"
+	Active   GameStatus = "active"
+	Finished GameStatus = "finished"
+	Canceled GameStatus = "cancelled"
+)
+
 type Game struct {
 	Uuid        string        `json:"uuid"`
 	CreatorUuid string        `json:"creator_uuid"`
-	Status      string        `json:"status"`
+	Status      GameStatus    `json:"status"`
 	BetAmount   types.Decimal `json:"bet_amount"`
 	BulletCount int           `json:"bullet_count"`
 	CreatedAt   time.Time     `json:"created_at"`
@@ -16,14 +25,14 @@ type Game struct {
 
 type CreateGame struct {
 	CreatorUuid string        `json:"creator_uuid"`
-	Status      string        `json:"status"`
+	Status      GameStatus    `json:"status"`
 	BetAmount   types.Decimal `json:"bet_amount"`
 	BulletCount int           `json:"bullet_count"`
 }
 
 type UpdateGame struct {
 	Uuid        string         `json:"uuid"`
-	Status      *string        `json:"status,omitempty"`
+	Status      *GameStatus    `json:"status,omitempty"`
 	BetAmount   *types.Decimal `json:"bet_amount,omitempty"`
 	BulletCount *int           `json:"bullet_count,omitempty"`
 }

@@ -26,7 +26,7 @@ import (
 // User is an object representing the database table.
 type User struct {
 	UUID          string            `boil:"uuid" json:"uuid" toml:"uuid" yaml:"uuid"`
-	ChatID        int               `boil:"chat_id" json:"chat_id" toml:"chat_id" yaml:"chat_id"`
+	ChatID        int64             `boil:"chat_id" json:"chat_id" toml:"chat_id" yaml:"chat_id"`
 	TGName        string            `boil:"tg_name" json:"tg_name" toml:"tg_name" yaml:"tg_name"`
 	Balance       types.NullDecimal `boil:"balance" json:"balance,omitempty" toml:"balance" yaml:"balance,omitempty"`
 	WalletAddress null.String       `boil:"wallet_address" json:"wallet_address,omitempty" toml:"wallet_address" yaml:"wallet_address,omitempty"`
@@ -79,6 +79,29 @@ var UserTableColumns = struct {
 }
 
 // Generated where
+
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelperint64) NIN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
 
 type whereHelpertypes_NullDecimal struct{ field string }
 
@@ -146,7 +169,7 @@ func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNo
 
 var UserWhere = struct {
 	UUID          whereHelperstring
-	ChatID        whereHelperint
+	ChatID        whereHelperint64
 	TGName        whereHelperstring
 	Balance       whereHelpertypes_NullDecimal
 	WalletAddress whereHelpernull_String
@@ -155,7 +178,7 @@ var UserWhere = struct {
 	CreatedAt     whereHelpernull_Time
 }{
 	UUID:          whereHelperstring{field: "\"users\".\"uuid\""},
-	ChatID:        whereHelperint{field: "\"users\".\"chat_id\""},
+	ChatID:        whereHelperint64{field: "\"users\".\"chat_id\""},
 	TGName:        whereHelperstring{field: "\"users\".\"tg_name\""},
 	Balance:       whereHelpertypes_NullDecimal{field: "\"users\".\"balance\""},
 	WalletAddress: whereHelpernull_String{field: "\"users\".\"wallet_address\""},

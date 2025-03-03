@@ -25,8 +25,8 @@ func NewGamePlayersRepository(db *sql.DB, logger *zap.Logger) *GamePlayersReposi
 	}
 }
 
-func (r *GamePlayersRepository) NewFromModel(model *models.GamePlayer) (*game.GamePlayers, error) {
-	return &game.GamePlayers{
+func (r *GamePlayersRepository) NewFromModel(model *models.GamePlayer) (*game.GamePlayer, error) {
+	return &game.GamePlayer{
 		Uuid:     model.UUID,
 		GameUuid: model.GameUUID.String,
 		UserUuid: model.UserUUID.String,
@@ -35,7 +35,7 @@ func (r *GamePlayersRepository) NewFromModel(model *models.GamePlayer) (*game.Ga
 	}, nil
 }
 
-func (r *GamePlayersRepository) Create(ctx context.Context, newPlayer *game.CreateGamePlayers) (*game.GamePlayers, error) {
+func (r *GamePlayersRepository) Create(ctx context.Context, newPlayer *game.CreateGamePlayer) (*game.GamePlayer, error) {
 	player := &models.GamePlayer{
 		GameUUID: null.NewString(newPlayer.GameUuid, newPlayer.GameUuid != ""),
 		UserUUID: null.NewString(newPlayer.UserUuid, newPlayer.UserUuid != ""),
@@ -50,7 +50,7 @@ func (r *GamePlayersRepository) Create(ctx context.Context, newPlayer *game.Crea
 	return r.NewFromModel(player)
 }
 
-func (r *GamePlayersRepository) Update(ctx context.Context, upd *game.UpdateGamePlayers) (*game.GamePlayers, error) {
+func (r *GamePlayersRepository) Update(ctx context.Context, upd *game.UpdateGamePlayer) (*game.GamePlayer, error) {
 	player, err := models.GamePlayers(models.GamePlayerWhere.UUID.EQ(upd.Uuid)).One(ctx, r.db)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -70,7 +70,7 @@ func (r *GamePlayersRepository) Update(ctx context.Context, upd *game.UpdateGame
 	return r.NewFromModel(player)
 }
 
-func (r *GamePlayersRepository) GetAll(ctx context.Context, filters *game.GetGamePlayersFilters) ([]*game.GamePlayers, error) {
+func (r *GamePlayersRepository) GetAll(ctx context.Context, filters *game.GetGamePlayersFilters) ([]*game.GamePlayer, error) {
 	var qms []qm.QueryMod
 
 	if filters.Uuid != nil {
@@ -97,7 +97,7 @@ func (r *GamePlayersRepository) GetAll(ctx context.Context, filters *game.GetGam
 		return nil, errors.Wrap(err, custom_errors.ErrFetchGamePlayers)
 	}
 
-	result := make([]*game.GamePlayers, 0, len(players))
+	result := make([]*game.GamePlayer, 0, len(players))
 	for _, player := range players {
 		p, err := r.NewFromModel(player)
 		if err != nil {
@@ -109,6 +109,6 @@ func (r *GamePlayersRepository) GetAll(ctx context.Context, filters *game.GetGam
 	return result, nil
 }
 
-func (r *GamePlayersRepository) GetByGameUUID(ctx context.Context, gameUuid string) ([]*game.GamePlayers, error) {
+func (r *GamePlayersRepository) GetByGameUUID(ctx context.Context, gameUuid string) ([]*game.GamePlayer, error) {
 	return r.GetAll(ctx, &game.GetGamePlayersFilters{GameUuid: &gameUuid})
 }

@@ -2,7 +2,7 @@ package game
 
 // Во всем репозитории ловить ошибки на REFERENCES, потому что game_uuid и user_uuid - это ключи в бд других таблиц
 
-type GamePlayers struct {
+type GamePlayer struct {
 	Uuid     string `json:"uuid"`
 	GameUuid string `json:"game_uuid"`
 	UserUuid string `json:"user_uuid"`
@@ -10,12 +10,12 @@ type GamePlayers struct {
 	IsAlive  bool   `json:"is_alive"`
 }
 
-type CreateGamePlayers struct {
+type CreateGamePlayer struct {
 	GameUuid string `json:"game_uuid"`
 	UserUuid string `json:"user_uuid"`
 }
 
-type UpdateGamePlayers struct {
+type UpdateGamePlayer struct {
 	Uuid    string `json:"uuid"`
 	HasShot bool   `json:"has_shot"`
 	IsAlive bool   `json:"is_alive"`

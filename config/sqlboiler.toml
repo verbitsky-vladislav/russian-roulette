@@ -3,6 +3,14 @@ output = "./internal/models/"
 wipe = true
 no-tests = true
 
+[[types]]
+    [types.match]
+        type = "types.Decimal"
+    [types.replace]
+        type = "decimal.Decimal"
+    [types.imports]
+        third_party = ["github.com/shopspring/decimal"]
+
 [psql]
 blacklist = ["goose_db_version"]
 

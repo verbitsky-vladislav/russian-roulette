@@ -8,7 +8,8 @@ import (
 )
 
 type Bot struct {
-	commandsHandler handler.CommandsHandler
+	commandsHandler  handler.CommandsHandler
+	callbacksHandler handler.CallbacksHandler
 
 	bot    *tgbotapi.BotAPI
 	cfg    *config.Config
@@ -17,12 +18,14 @@ type Bot struct {
 
 func New(
 	commandsHandler handler.CommandsHandler,
+	callbacksHandler handler.CallbacksHandler,
 
 	bot *tgbotapi.BotAPI,
 	cfg *config.Config, logger *zap.Logger,
 ) *Bot {
 	return &Bot{
-		commandsHandler: commandsHandler,
+		commandsHandler:  commandsHandler,
+		callbacksHandler: callbacksHandler,
 
 		bot:    bot,
 		cfg:    cfg,
@@ -37,6 +40,7 @@ func (b *Bot) Init() {
 
 	h := handler.New(
 		b.commandsHandler,
+		b.callbacksHandler,
 		b.bot, b.cfg, b.logger,
 	)
 

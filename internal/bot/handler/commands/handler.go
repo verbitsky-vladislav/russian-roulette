@@ -13,14 +13,21 @@ import (
 
 type Commands struct {
 	userService service.UserService
+	gameService service.GameService
 	bot         *tgbotapi.BotAPI
 	logger      *zap.Logger
 }
 
-func NewCommandsHandler(bot *tgbotapi.BotAPI, userService service.UserService, logger *zap.Logger) *Commands {
+func NewCommandsHandler(
+	bot *tgbotapi.BotAPI,
+	userService service.UserService,
+	gameService service.GameService,
+	logger *zap.Logger,
+) *Commands {
 	return &Commands{
 		bot:         bot,
 		userService: userService,
+		gameService: gameService,
 		logger:      logger,
 	}
 }
@@ -28,12 +35,10 @@ func NewCommandsHandler(bot *tgbotapi.BotAPI, userService service.UserService, l
 func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 	ctx := context.Background()
 
-	rouletteHandler := middleware.ApplyMiddlewares(cmd.Roulette, middleware.AuthMiddleware(cmd.userService))
-	joinHandler := middleware.ApplyMiddlewares(cmd.Join, middleware.AuthMiddleware(cmd.userService))
-	betHandler := middleware.ApplyMiddlewares(cmd.Bet, middleware.AuthMiddleware(cmd.userService))
-	pullHandler := middleware.ApplyMiddlewares(cmd.Pull, middleware.AuthMiddleware(cmd.userService))
-	passHandler := middleware.ApplyMiddlewares(cmd.Pass, middleware.AuthMiddleware(cmd.userService))
-	statsHandler := middleware.ApplyMiddlewares(cmd.Stats, middleware.AuthMiddleware(cmd.userService))
+	rouletteHandler := middleware.ApplyMessageMiddlewares(cmd.Roulette, middleware.AuthMessageMiddleware(cmd.userService))
+	pullHandler := middleware.ApplyMessageMiddlewares(cmd.Pull, middleware.AuthMessageMiddleware(cmd.userService))
+	passHandler := middleware.ApplyMessageMiddlewares(cmd.Pass, middleware.AuthMessageMiddleware(cmd.userService))
+	statsHandler := middleware.ApplyMessageMiddlewares(cmd.Stats, middleware.AuthMessageMiddleware(cmd.userService))
 
 	switch message.Command() {
 	case "start":
@@ -60,22 +65,6 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 			err := rouletteHandler(ctx, message)
 			return err
 		}
-	case "join":
-		{
-			cmd.logger.Debug("/join : command was handled")
-			// Позволяет пользователю присоединиться к уже созданной игре.
-			// Бот должен проверять, есть ли активная игра и свободные места.
-			err := joinHandler(ctx, message)
-			return err
-		}
-	case "bet":
-		{
-			cmd.logger.Debug("/bet : command was handled")
-			// Игрок делает ставку перед началом игры (если ставки нужны отдельно).
-			// Проверяет баланс игрока и вносит сумму в банк игры.
-			err := betHandler(ctx, message)
-			return err
-		}
 	case "pull":
 		{
 			cmd.logger.Debug("/pull : command was handled")
@@ -99,13 +88,6 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 			err := cmd.Players()
 			return err
 		}
-	//case "balance":
-	//	{
-	//		cmd.logger.Debug("/balance : command was handled")
-	//		// Отображает баланс игрока в игре (например, количество токенов или денег).
-	//		err := cmd.Balance()
-	//		return err
-	//	}
 	case "stats":
 		{
 			cmd.logger.Debug("/stats : command was handled")
@@ -120,27 +102,6 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 			err := cmd.Top()
 			return err
 		}
-	//case "wallet":
-	//	{
-	//		cmd.logger.Debug("/wallet : command was handled")
-	//		// Проверяет криптокошелек игрока, если игра использует токены.
-	//		err := cmd.Wallet()
-	//		return err
-	//	}
-	//case "deposit":
-	//	{
-	//		cmd.logger.Debug("/deposit : command was handled")
-	//		// Позволяет пополнить баланс игрока (например, с криптокошелька).
-	//		err := cmd.Deposit()
-	//		return err
-	//	}
-	//case "withdraw":
-	//	{
-	//		cmd.logger.Debug("/withdraw : command was handled")
-	//		// Позволяет вывести выигранные средства с баланса игрока.
-	//		err := cmd.Withdraw()
-	//		return err
-	//	}
 	default:
 		return custom_errors.ErrNoCommandFound
 	}

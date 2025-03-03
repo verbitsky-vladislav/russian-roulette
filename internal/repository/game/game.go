@@ -7,7 +7,6 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	boilerTypes "github.com/volatiletech/sqlboiler/v4/types"
 	"go.uber.org/zap"
 	"russian-roulette/internal/entities/custom_errors"
 	gameEntities "russian-roulette/internal/entities/game"
@@ -32,18 +31,20 @@ func (r *GameRepository) NewFromModel(model *models.Game) (*gameEntities.Game, e
 	return &gameEntities.Game{
 		Uuid:        model.UUID,
 		CreatorUuid: model.CreatorUUID.String,
-		Status:      model.Status,
-		BetAmount:   types.Decimal{Big: model.BetAmount.Big},
+		Status:      gameEntities.GameStatus(model.Status),
+		BetAmount:   *types.NewDecimalFromString(model.BetAmount),
 		BulletCount: model.BulletCount,
 		CreatedAt:   model.CreatedAt.Time,
 	}, nil
 }
 
 func (r *GameRepository) Create(ctx context.Context, newGame *gameEntities.CreateGame) (*gameEntities.Game, error) {
+	r.logger.Debug("create new game", zap.Any("game", newGame))
+
 	game := &models.Game{
 		CreatorUUID: null.NewString(newGame.CreatorUuid, newGame.CreatorUuid != ""),
-		Status:      newGame.Status,
-		BetAmount:   boilerTypes.Decimal(newGame.BetAmount),
+		Status:      string(newGame.Status),
+		BetAmount:   newGame.BetAmount.String(),
 		BulletCount: newGame.BulletCount,
 	}
 
@@ -71,10 +72,10 @@ func (r *GameRepository) Update(ctx context.Context, upd *gameEntities.UpdateGam
 	}
 
 	if upd.Status != nil {
-		game.Status = *upd.Status
+		game.Status = string(*upd.Status)
 	}
 	if upd.BetAmount != nil {
-		game.BetAmount = boilerTypes.Decimal(*upd.BetAmount)
+		game.BetAmount = upd.BetAmount.String()
 	}
 	if upd.BulletCount != nil {
 		game.BulletCount = *upd.BulletCount
@@ -109,7 +110,7 @@ func (r *GameRepository) GetAll(ctx context.Context, filters *gameEntities.GetGa
 	}
 
 	if filters.BetAmount != nil {
-		qms = append(qms, models.GameWhere.BetAmount.EQ(boilerTypes.NewDecimal(filters.BetAmount.Big)))
+		qms = append(qms, models.GameWhere.BetAmount.EQ(filters.BetAmount.String()))
 	}
 
 	if filters.BulletCount != nil {

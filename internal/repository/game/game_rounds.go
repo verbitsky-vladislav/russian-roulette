@@ -7,17 +7,19 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"go.uber.org/zap"
 	"russian-roulette/internal/entities/custom_errors"
 	gameEntities "russian-roulette/internal/entities/game"
 	"russian-roulette/internal/models"
 )
 
 type GameRoundRepository struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *zap.Logger
 }
 
-func NewGameRoundRepository(db *sql.DB) *GameRoundRepository {
-	return &GameRoundRepository{db: db}
+func NewGameRoundRepository(db *sql.DB, logger *zap.Logger) *GameRoundRepository {
+	return &GameRoundRepository{db: db, logger: logger}
 }
 
 func (r *GameRoundRepository) NewFromModel(model *models.GameRound) (*gameEntities.GameRound, error) {
@@ -47,7 +49,7 @@ func (r *GameRoundRepository) Create(ctx context.Context, newRound *gameEntities
 	return r.NewFromModel(round)
 }
 
-func (r *GameRoundRepository) GetAll(ctx context.Context, filters *gameEntities.GetGameRounds) ([]*gameEntities.GameRound, error) {
+func (r *GameRoundRepository) GetAll(ctx context.Context, filters *gameEntities.GetGameRoundsFilters) ([]*gameEntities.GameRound, error) {
 	var qms []qm.QueryMod
 
 	if filters.Uuid != nil {

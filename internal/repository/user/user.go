@@ -42,7 +42,7 @@ func (r *UserRepository) NewFromModel(model *models.User) (*userEntities.User, e
 
 func (r *UserRepository) Create(ctx context.Context, newUser *userEntities.CreateUser) (*userEntities.User, error) {
 	user := &models.User{
-		ChatID: int(newUser.ChatId),
+		ChatID: newUser.ChatId,
 		TGName: newUser.TgName,
 	}
 
@@ -55,7 +55,7 @@ func (r *UserRepository) Create(ctx context.Context, newUser *userEntities.Creat
 }
 
 func (r *UserRepository) Update(ctx context.Context, upd *userEntities.UpdateUser) (*userEntities.User, error) {
-	user, err := models.Users(models.UserWhere.ChatID.EQ(int(upd.ChatId))).One(ctx, r.db)
+	user, err := models.Users(models.UserWhere.ChatID.EQ(upd.ChatId)).One(ctx, r.db)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New(custom_errors.ErrUserNotFound)
@@ -94,7 +94,7 @@ func (r *UserRepository) GetAll(ctx context.Context, filters *userEntities.GetUs
 		qms = append(qms, models.UserWhere.UUID.EQ(*filters.Uuid))
 	}
 	if filters.ChatId != nil {
-		qms = append(qms, models.UserWhere.ChatID.EQ(int(*filters.ChatId)))
+		qms = append(qms, models.UserWhere.ChatID.EQ(*filters.ChatId))
 	}
 	if filters.TgName != nil {
 		qms = append(qms, models.UserWhere.TGName.EQ(*filters.TgName))

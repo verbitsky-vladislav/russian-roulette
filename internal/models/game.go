@@ -19,18 +19,17 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/queries/qmhelper"
-	"github.com/volatiletech/sqlboiler/v4/types"
 	"github.com/volatiletech/strmangle"
 )
 
 // Game is an object representing the database table.
 type Game struct {
-	UUID        string        `boil:"uuid" json:"uuid" toml:"uuid" yaml:"uuid"`
-	CreatorUUID null.String   `boil:"creator_uuid" json:"creator_uuid,omitempty" toml:"creator_uuid" yaml:"creator_uuid,omitempty"`
-	Status      string        `boil:"status" json:"status" toml:"status" yaml:"status"`
-	BetAmount   types.Decimal `boil:"bet_amount" json:"bet_amount" toml:"bet_amount" yaml:"bet_amount"`
-	BulletCount int           `boil:"bullet_count" json:"bullet_count" toml:"bullet_count" yaml:"bullet_count"`
-	CreatedAt   null.Time     `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
+	UUID        string      `boil:"uuid" json:"uuid" toml:"uuid" yaml:"uuid"`
+	CreatorUUID null.String `boil:"creator_uuid" json:"creator_uuid,omitempty" toml:"creator_uuid" yaml:"creator_uuid,omitempty"`
+	Status      string      `boil:"status" json:"status" toml:"status" yaml:"status"`
+	BetAmount   string      `boil:"bet_amount" json:"bet_amount" toml:"bet_amount" yaml:"bet_amount"`
+	BulletCount int         `boil:"bullet_count" json:"bullet_count" toml:"bullet_count" yaml:"bullet_count"`
+	CreatedAt   null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
 
 	R *gameR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L gameL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -157,27 +156,6 @@ func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
 func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
 func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
-type whereHelpertypes_Decimal struct{ field string }
-
-func (w whereHelpertypes_Decimal) EQ(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.EQ, x)
-}
-func (w whereHelpertypes_Decimal) NEQ(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.NEQ, x)
-}
-func (w whereHelpertypes_Decimal) LT(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertypes_Decimal) LTE(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertypes_Decimal) GT(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertypes_Decimal) GTE(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 type whereHelperint struct{ field string }
 
 func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
@@ -229,14 +207,14 @@ var GameWhere = struct {
 	UUID        whereHelperstring
 	CreatorUUID whereHelpernull_String
 	Status      whereHelperstring
-	BetAmount   whereHelpertypes_Decimal
+	BetAmount   whereHelperstring
 	BulletCount whereHelperint
 	CreatedAt   whereHelpernull_Time
 }{
 	UUID:        whereHelperstring{field: "\"game\".\"uuid\""},
 	CreatorUUID: whereHelpernull_String{field: "\"game\".\"creator_uuid\""},
 	Status:      whereHelperstring{field: "\"game\".\"status\""},
-	BetAmount:   whereHelpertypes_Decimal{field: "\"game\".\"bet_amount\""},
+	BetAmount:   whereHelperstring{field: "\"game\".\"bet_amount\""},
 	BulletCount: whereHelperint{field: "\"game\".\"bullet_count\""},
 	CreatedAt:   whereHelpernull_Time{field: "\"game\".\"created_at\""},
 }

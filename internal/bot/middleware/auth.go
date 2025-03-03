@@ -10,8 +10,8 @@ import (
 	"russian-roulette/internal/service"
 )
 
-func AuthMiddleware(userService service.UserService) func(HandlerFunc) HandlerFunc {
-	return func(next HandlerFunc) HandlerFunc {
+func AuthMessageMiddleware(userService service.UserService) func(MessageHandlerFunc) MessageHandlerFunc {
+	return func(next MessageHandlerFunc) MessageHandlerFunc {
 		return func(ctx context.Context, message *tgbotapi.Message) error {
 			// Проверяем, есть ли уже пользователь в контексте
 			if user, ok := ctx.Value(UserContextKey).(*userEntities.User); ok && user != nil {
@@ -21,7 +21,36 @@ func AuthMiddleware(userService service.UserService) func(HandlerFunc) HandlerFu
 			// Получаем пользователя из базы
 			user, err := userService.GetUserByChatId(ctx, message.From.ID)
 			if err != nil {
-				if errors.As(err, &sql.ErrNoRows) {
+				if errors.Is(err, sql.ErrNoRows) {
+					return custom_errors.ErrUserNotFound
+				}
+				return err
+			}
+			if user == nil {
+				return custom_errors.ErrUserNotFound
+			}
+
+			// Добавляем пользователя в контекст
+			ctx = context.WithValue(ctx, UserContextKey, user)
+
+			// Передаем дальше по цепочке
+			return next(ctx, message)
+		}
+	}
+}
+
+func AuthCallbackMiddleware(userService service.UserService) func(CallbackHandlerFunc) CallbackHandlerFunc {
+	return func(next CallbackHandlerFunc) CallbackHandlerFunc {
+		return func(ctx context.Context, message *tgbotapi.CallbackQuery) error {
+			// Проверяем, есть ли уже пользователь в контексте
+			if user, ok := ctx.Value(UserContextKey).(*userEntities.User); ok && user != nil {
+				return next(ctx, message)
+			}
+
+			// Получаем пользователя из базы
+			user, err := userService.GetUserByChatId(ctx, message.From.ID)
+			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
 					return custom_errors.ErrUserNotFound
 				}
 				return err
