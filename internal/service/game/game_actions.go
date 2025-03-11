@@ -5,8 +5,9 @@ import (
 	gameEntities "russian-roulette/internal/entities/game"
 )
 
-func (g *GameService) AddUserToGame(ctx context.Context, userUuid, gameUuid string) (*gameEntities.GamePlayer, error) {
+func (g *GameService) AddUserToGame(ctx context.Context, userUuid, gameUuid, name string) (*gameEntities.GamePlayer, error) {
 	player, err := g.gamePlayerRepository.Create(ctx, &gameEntities.CreateGamePlayer{
+		Name:     name,
 		GameUuid: gameUuid,
 		UserUuid: userUuid,
 	})
@@ -15,4 +16,12 @@ func (g *GameService) AddUserToGame(ctx context.Context, userUuid, gameUuid stri
 	}
 
 	return player, nil
+}
+
+func (g *GameService) Pull(ctx context.Context) {
+
+}
+
+func (g *GameService) Pass(ctx context.Context) {
+
 }

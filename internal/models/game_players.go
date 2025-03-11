@@ -29,6 +29,7 @@ type GamePlayer struct {
 	UserUUID null.String `boil:"user_uuid" json:"user_uuid,omitempty" toml:"user_uuid" yaml:"user_uuid,omitempty"`
 	HasShot  null.Bool   `boil:"has_shot" json:"has_shot,omitempty" toml:"has_shot" yaml:"has_shot,omitempty"`
 	IsAlive  null.Bool   `boil:"is_alive" json:"is_alive,omitempty" toml:"is_alive" yaml:"is_alive,omitempty"`
+	Name     string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 
 	R *gamePlayerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L gamePlayerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -40,12 +41,14 @@ var GamePlayerColumns = struct {
 	UserUUID string
 	HasShot  string
 	IsAlive  string
+	Name     string
 }{
 	UUID:     "uuid",
 	GameUUID: "game_uuid",
 	UserUUID: "user_uuid",
 	HasShot:  "has_shot",
 	IsAlive:  "is_alive",
+	Name:     "name",
 }
 
 var GamePlayerTableColumns = struct {
@@ -54,12 +57,14 @@ var GamePlayerTableColumns = struct {
 	UserUUID string
 	HasShot  string
 	IsAlive  string
+	Name     string
 }{
 	UUID:     "game_players.uuid",
 	GameUUID: "game_players.game_uuid",
 	UserUUID: "game_players.user_uuid",
 	HasShot:  "game_players.has_shot",
 	IsAlive:  "game_players.is_alive",
+	Name:     "game_players.name",
 }
 
 // Generated where
@@ -94,12 +99,14 @@ var GamePlayerWhere = struct {
 	UserUUID whereHelpernull_String
 	HasShot  whereHelpernull_Bool
 	IsAlive  whereHelpernull_Bool
+	Name     whereHelperstring
 }{
 	UUID:     whereHelperstring{field: "\"game_players\".\"uuid\""},
 	GameUUID: whereHelpernull_String{field: "\"game_players\".\"game_uuid\""},
 	UserUUID: whereHelpernull_String{field: "\"game_players\".\"user_uuid\""},
 	HasShot:  whereHelpernull_Bool{field: "\"game_players\".\"has_shot\""},
 	IsAlive:  whereHelpernull_Bool{field: "\"game_players\".\"is_alive\""},
+	Name:     whereHelperstring{field: "\"game_players\".\"name\""},
 }
 
 // GamePlayerRels is where relationship names are stored.
@@ -140,9 +147,9 @@ func (r *gamePlayerR) GetUser() *User {
 type gamePlayerL struct{}
 
 var (
-	gamePlayerAllColumns            = []string{"uuid", "game_uuid", "user_uuid", "has_shot", "is_alive"}
+	gamePlayerAllColumns            = []string{"uuid", "game_uuid", "user_uuid", "has_shot", "is_alive", "name"}
 	gamePlayerColumnsWithoutDefault = []string{}
-	gamePlayerColumnsWithDefault    = []string{"uuid", "game_uuid", "user_uuid", "has_shot", "is_alive"}
+	gamePlayerColumnsWithDefault    = []string{"uuid", "game_uuid", "user_uuid", "has_shot", "is_alive", "name"}
 	gamePlayerPrimaryKeyColumns     = []string{"uuid"}
 	gamePlayerGeneratedColumns      = []string{}
 )

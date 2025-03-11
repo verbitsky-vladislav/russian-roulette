@@ -39,6 +39,7 @@ func (r *GamePlayersRepository) Create(ctx context.Context, newPlayer *game.Crea
 	player := &models.GamePlayer{
 		GameUUID: null.NewString(newPlayer.GameUuid, newPlayer.GameUuid != ""),
 		UserUUID: null.NewString(newPlayer.UserUuid, newPlayer.UserUuid != ""),
+		Name:     newPlayer.Name,
 		IsAlive:  null.NewBool(true, true),
 	}
 
@@ -81,6 +82,9 @@ func (r *GamePlayersRepository) GetAll(ctx context.Context, filters *game.GetGam
 	}
 	if filters.UserUuid != nil {
 		qms = append(qms, models.GamePlayerWhere.UserUUID.EQ(null.NewString(*filters.UserUuid, *filters.UserUuid != "")))
+	}
+	if filters.Name != nil {
+		qms = append(qms, models.GamePlayerWhere.Name.EQ(*filters.Name))
 	}
 	if filters.HasShot != nil {
 		qms = append(qms, models.GamePlayerWhere.HasShot.EQ(null.NewBool(*filters.HasShot, filters.HasShot != nil)))

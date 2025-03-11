@@ -37,13 +37,36 @@ func (r *GameRoundRepository) Create(ctx context.Context, newRound *gameEntities
 	round := &models.GameRound{
 		GameUUID: null.NewString(newRound.GameUuid, newRound.GameUuid != ""),
 		UserUUID: null.NewString(newRound.UserUuid, newRound.UserUuid != ""),
-		Action:   null.NewString(string(newRound.Action), newRound.Action != ""),
-		Result:   null.NewString(string(newRound.Result), newRound.Result != ""),
 	}
 
 	err := round.Insert(ctx, r.db, boil.Infer())
 	if err != nil {
 		return nil, errors.Wrap(err, custom_errors.ErrInsertGameRounds)
+	}
+
+	return r.NewFromModel(round)
+}
+
+func (r *GameRoundRepository) Update(ctx context.Context, upd *gameEntities.UpdateGameRound) (*gameEntities.GameRound, error) {
+	round, err := models.GameRounds(models.GameRoundWhere.UUID.EQ(upd.Uuid)).One(ctx, r.db)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New(custom_errors.ErrGameRoundsNotFound)
+		}
+		return nil, errors.Wrap(err, custom_errors.ErrUpdateGameRounds)
+	}
+
+	if upd.Action != nil {
+		round.Action = null.NewString(string(*upd.Action), *upd.Action != "")
+	}
+
+	if upd.Result != nil {
+		round.Result = null.NewString(string(*upd.Result), *upd.Result != "")
+	}
+
+	_, err = round.Update(ctx, r.db, boil.Infer())
+	if err != nil {
+		return nil, errors.Wrap(err, custom_errors.ErrUpdateGameRounds)
 	}
 
 	return r.NewFromModel(round)

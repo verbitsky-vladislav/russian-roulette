@@ -6,6 +6,7 @@ type GamePlayer struct {
 	Uuid     string `json:"uuid"`
 	GameUuid string `json:"game_uuid"`
 	UserUuid string `json:"user_uuid"`
+	Name     string `json:"name"`
 	HasShot  bool   `json:"has_shot"`
 	IsAlive  bool   `json:"is_alive"`
 }
@@ -13,10 +14,12 @@ type GamePlayer struct {
 type CreateGamePlayer struct {
 	GameUuid string `json:"game_uuid"`
 	UserUuid string `json:"user_uuid"`
+	Name     string `json:"name"`
 }
 
 type UpdateGamePlayer struct {
 	Uuid    string `json:"uuid"`
+	Name    string `json:"name"`
 	HasShot bool   `json:"has_shot"`
 	IsAlive bool   `json:"is_alive"`
 }
@@ -25,6 +28,7 @@ type GetGamePlayersFilters struct { // todo add check on filters exists, пот�
 	Uuid     *string `json:"uuid"`
 	GameUuid *string `json:"game_uuid"`
 	UserUuid *string `json:"user_uuid"`
+	Name     *string `json:"name"`
 	HasShot  *bool   `json:"has_shot"`
 	IsAlive  *bool   `json:"is_alive"`
 }

@@ -32,6 +32,12 @@ type CreateGameRound struct {
 	Result   GameActionResult `json:"result"`
 }
 
+type UpdateGameRound struct {
+	Uuid   string            `json:"uuid"`
+	Action *GameAction       `json:"action"`
+	Result *GameActionResult `json:"result"`
+}
+
 type GetGameRoundsFilters struct { // todo add check if filters null return nill
 	Uuid     *string           `json:"uuid"`
 	GameUuid *string           `json:"game_uuid"`

@@ -21,11 +21,3 @@ func UserAlreadyJoinedMessage() string {
 func DefaultErrorMessage() string {
 	return "Произошла неизвестная ошибка. Попробуйте снова или создайте новую игру."
 }
-
-func UnsuccessfulJoinGameMessage() string {
-	return "❌ Не удалось присоединиться к игре. Возможно, игра уже началась или достигнуто максимальное количество участников."
-}
-
-func SuccessfulCancelGameMessage() string {
-	return "Игра успешно отменена. Все ставки возвращены игрокам."
-}

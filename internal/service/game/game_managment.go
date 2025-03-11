@@ -50,3 +50,39 @@ func (g *GameService) CancelGame(ctx context.Context, gameUuid, creatorUuid stri
 
 	return nil
 }
+
+func (g *GameService) StartGame(ctx context.Context, gameUuid string) error {
+	_, err := g.gameRepository.Update(ctx, &gameEntities.UpdateGame{
+		Uuid:   gameUuid,
+		Status: projectUtils.ToPtr(gameEntities.Active),
+	})
+	if err != nil {
+		return err
+	}
+	//players, err := g.gamePlayerRepository.GetAll(ctx, &gameEntities.GetGamePlayersFilters{
+	//	GameUuid: &game.Uuid,
+	//})
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//err = g.GenerateRounds(game, players)
+	//if err != nil {
+	//	return err
+	//}
+	return nil
+}
+
+func (g *GameService) CreateRound(ctx context.Context, gameUuid, userUuid string, action gameEntities.GameAction, result gameEntities.GameActionResult) (*gameEntities.GameRound, error) {
+	round, err := g.gameRoundRepository.Create(ctx, &gameEntities.CreateGameRound{
+		GameUuid: gameUuid,
+		UserUuid: userUuid,
+		Action:   action,
+		Result:   result,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return round, nil
+}

@@ -13,6 +13,7 @@ CREATE TABLE game_players (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     game_uuid UUID REFERENCES game(uuid) ON DELETE CASCADE,
     user_uuid UUID REFERENCES users(uuid) ON DELETE CASCADE,
+    name VARCHAR NOT NULL DEFAULT '',
     has_shot BOOLEAN DEFAULT FALSE,
     is_alive BOOLEAN DEFAULT TRUE
 );

@@ -52,6 +52,7 @@ type (
 	}
 	GameRoundRepository interface {
 		Create(ctx context.Context, newRound *gameEntities.CreateGameRound) (*gameEntities.GameRound, error)
+		Update(ctx context.Context, upd *gameEntities.UpdateGameRound) (*gameEntities.GameRound, error)
 		GetAll(ctx context.Context, filters *gameEntities.GetGameRoundsFilters) ([]*gameEntities.GameRound, error)
 	}
 	GamePlayerRepository interface {

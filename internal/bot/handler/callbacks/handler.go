@@ -68,7 +68,7 @@ func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) 
 		return botCustomErrors.ErrGameIsNotActive
 	}
 
-	err := cb.userService.JoinGame(ctx, u.Uuid, gameUuid)
+	isStart, players, err := cb.userService.JoinGame(ctx, u.Uuid, gameUuid, message.From.UserName)
 	if err != nil {
 		errText := text.DefaultErrorMessage()
 
@@ -100,6 +100,19 @@ func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) 
 	}, cb.logger)
 	if err != nil {
 		return err
+	}
+
+	if isStart {
+		var playersNames []string
+		for _, player := range players {
+			playersNames = append(playersNames, player.Name)
+		}
+		t := text.StartGameMessage(playersNames)
+
+		err = telegramUtils.SendMessage(cb.bot, &telegramUtils.Message{
+			ChatId: message.Message.Chat.ID,
+			Text:   t,
+		}, cb.logger)
 	}
 
 	return nil
