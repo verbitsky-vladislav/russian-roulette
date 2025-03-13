@@ -56,7 +56,6 @@ func (cb *Callbacks) CallbacksRouter(message *tgbotapi.CallbackQuery) error {
 }
 
 func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) error {
-
 	u, ok := ctx.Value(middleware.UserContextKey).(*userEntities.User)
 	if !ok {
 		return errors.New(projectCustomErrors.ErrUserNotFoundInContext)
@@ -80,6 +79,12 @@ func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) 
 		}
 		if err.Error() == projectCustomErrors.ErrUserAlreadyJoinToGame {
 			errText = text.UserAlreadyJoinedMessage()
+		}
+		if err.Error() == projectCustomErrors.ErrUserAlreadyJoinToGame {
+			errText = text.UserAlreadyHaveActiveGameMessage()
+		}
+		if err.Error() == projectCustomErrors.ErrUserAlreadyHaveActiveGame {
+
 		}
 
 		err = telegramUtils.SendMessage(cb.bot, &telegramUtils.Message{
@@ -105,6 +110,7 @@ func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) 
 	if isStart {
 		var playersNames []string
 		for _, player := range players {
+			cb.logger.Debug("log players", zap.Any("player", player))
 			playersNames = append(playersNames, player.Name)
 		}
 		t := text.StartGameMessage(playersNames)
@@ -113,6 +119,7 @@ func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) 
 			ChatId: message.Message.Chat.ID,
 			Text:   t,
 		}, cb.logger)
+
 	}
 
 	return nil

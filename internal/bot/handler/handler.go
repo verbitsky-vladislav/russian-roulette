@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 	"russian-roulette/internal/bot/custom_errors"
@@ -82,11 +83,13 @@ func (h *Handler) handleCommand(message *tgbotapi.Message) {
 			"error in handle command handler",
 			zap.Int64("user_id", message.Chat.ID),
 			zap.String("command", message.Command()),
-			zap.Error(err),
+			//zap.Error(err),
 		)
 
+		h.logger.Info("Error type", zap.String("type", fmt.Sprintf("%T", err)))
+
 		var customError custom_errors.CustomError
-		if errors.As(err, &customError) {
+		if errors.As(err, &customError) { // ✅ Правильная проверка
 			err = telegramUtils.SendMessage(h.bot, &telegramUtils.Message{
 				ChatId:           message.Chat.ID,
 				Text:             err.Error(),
@@ -110,7 +113,7 @@ func (h *Handler) handleCallback(message *tgbotapi.CallbackQuery) {
 		)
 
 		var customError custom_errors.CustomError
-		if errors.As(err, &customError) {
+		if errors.As(err, &customError) { // ✅ Правильная проверка
 			err = telegramUtils.SendMessage(h.bot, &telegramUtils.Message{
 				ChatId:           message.Message.Chat.ID,
 				Text:             err.Error(),

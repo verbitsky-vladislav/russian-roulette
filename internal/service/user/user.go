@@ -10,6 +10,7 @@ import (
 	userEntities "russian-roulette/internal/entities/user"
 	"russian-roulette/internal/repository"
 	"russian-roulette/internal/service"
+	"russian-roulette/internal/utils"
 )
 
 type UserService struct {
@@ -51,8 +52,48 @@ func (s *UserService) GetUserByChatId(ctx context.Context, chatId int64) (*userE
 	return u, nil
 }
 
+func (s *UserService) GetUserActiveGame(ctx context.Context, userUuid string) (*gameEntities.Game, error) {
+	games, err := s.gameService.GetAllGames(ctx, &gameEntities.GetGameFilters{
+		Status:   utils.ToPtr(string(gameEntities.Active)),
+		UserUuid: utils.ToPtr(userUuid),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(games) == 0 {
+		return nil, errors.New(custom_errors.ErrGameNotFound)
+	}
+
+	return games[0], nil
+}
+
+func (s *UserService) CheckUserActiveGame(ctx context.Context, userUuid string) (bool, error) {
+	games, err := s.gameService.GetAllGames(ctx, &gameEntities.GetGameFilters{
+		Status:   utils.ToPtr(string(gameEntities.Active)),
+		UserUuid: utils.ToPtr(userUuid),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	if len(games) == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func (s *UserService) JoinGame(ctx context.Context, userUuid, gameUuid, name string) (bool, []*gameEntities.GamePlayer, error) {
 	s.logger.Info("JoinGame called", zap.String("userUuid", userUuid), zap.String("gameUuid", gameUuid))
+
+	isActiveGame, err := s.CheckUserActiveGame(ctx, userUuid)
+	if err != nil {
+		return false, nil, err
+	}
+	if isActiveGame {
+		return false, nil, errors.New(custom_errors.ErrUserAlreadyHaveActiveGame)
+	}
 
 	game, _, players, err := s.gameService.GetGameByUuid(ctx, gameUuid, true, true)
 	if err != nil {
@@ -84,10 +125,11 @@ func (s *UserService) JoinGame(ctx context.Context, userUuid, gameUuid, name str
 		return false, nil, err
 	}
 
-	// длина прошлых участников + 1 новый == bullet count
-	if len(players)+1 >= game.BulletCount {
+	// длина прошлых участников + 1 новый == bullet count + 1
+	if len(players)+1 >= game.BulletCount+1 {
 		players = append(players, newPlayer)
 
+		s.logger.Debug("players: ", zap.Int("playersCount", len(players)), zap.Any("players", players))
 		err := s.gameService.StartGame(ctx, gameUuid)
 		if err != nil {
 			return false, nil, err

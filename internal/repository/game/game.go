@@ -125,6 +125,14 @@ func (r *GameRepository) GetAll(ctx context.Context, filters *gameEntities.GetGa
 		qms = append(qms, qm.Offset(filters.Offset))
 	}
 
+	// Если указан userUuid — добавляем INNER JOIN + фильтрацию по игрокам
+	if filters.UserUuid != nil {
+		qms = append(qms,
+			qm.InnerJoin("game_players ON game_players.game_uuid = game.uuid"),
+			qm.Where("game_players.user_uuid = ?", *filters.UserUuid),
+		)
+	}
+
 	games, err := models.Games(qms...).All(ctx, r.db)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

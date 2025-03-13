@@ -11,9 +11,12 @@ type (
 		RegisterUser(ctx context.Context, newUser *userEntities.CreateUser) (*userEntities.User, error)
 		GetUserByChatId(ctx context.Context, chatId int64) (*userEntities.User, error)
 		JoinGame(ctx context.Context, userUuid, gameUuid, name string) (bool, []*gameEntities.GamePlayer, error)
+		CheckUserActiveGame(ctx context.Context, userUuid string) (bool, error)
+		GetUserActiveGame(ctx context.Context, userUuid string) (*gameEntities.Game, error)
 	}
 	GameService interface {
 		GetGameByUuid(ctx context.Context, gameUuid string, rounds, players bool) (*gameEntities.Game, []*gameEntities.GameRound, []*gameEntities.GamePlayer, error)
+		GetAllGames(ctx context.Context, filters *gameEntities.GetGameFilters) ([]*gameEntities.Game, error)
 
 		CreateGame(ctx context.Context, newGame *gameEntities.CreateGame) (*gameEntities.Game, error)
 		CancelGame(ctx context.Context, gameUuid, creatorUuid string) error

@@ -2,10 +2,9 @@ package middleware
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"russian-roulette/internal/bot/custom_errors"
+	botErrors "russian-roulette/internal/bot/custom_errors"
+	customErrors "russian-roulette/internal/entities/custom_errors"
 	userEntities "russian-roulette/internal/entities/user"
 	"russian-roulette/internal/service"
 )
@@ -21,13 +20,13 @@ func AuthMessageMiddleware(userService service.UserService) func(MessageHandlerF
 			// Получаем пользователя из базы
 			user, err := userService.GetUserByChatId(ctx, message.From.ID)
 			if err != nil {
-				if errors.Is(err, sql.ErrNoRows) {
-					return custom_errors.ErrUserNotFound
+				if err.Error() == customErrors.ErrUserNotFound {
+					return botErrors.ErrUserNotFound
 				}
 				return err
 			}
 			if user == nil {
-				return custom_errors.ErrUserNotFound
+				return botErrors.ErrUserNotFound
 			}
 
 			// Добавляем пользователя в контекст
@@ -50,13 +49,13 @@ func AuthCallbackMiddleware(userService service.UserService) func(CallbackHandle
 			// Получаем пользователя из базы
 			user, err := userService.GetUserByChatId(ctx, message.From.ID)
 			if err != nil {
-				if errors.Is(err, sql.ErrNoRows) {
-					return custom_errors.ErrUserNotFound
+				if err.Error() == customErrors.ErrUserNotFound {
+					return botErrors.ErrUserNotFound
 				}
 				return err
 			}
 			if user == nil {
-				return custom_errors.ErrUserNotFound
+				return botErrors.ErrUserNotFound
 			}
 
 			// Добавляем пользователя в контекст

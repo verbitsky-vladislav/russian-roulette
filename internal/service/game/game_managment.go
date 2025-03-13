@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"errors"
+	"fmt"
 	"russian-roulette/internal/entities/custom_errors"
 	gameEntities "russian-roulette/internal/entities/game"
 	projectUtils "russian-roulette/internal/utils"
@@ -59,26 +60,90 @@ func (g *GameService) StartGame(ctx context.Context, gameUuid string) error {
 	if err != nil {
 		return err
 	}
-	//players, err := g.gamePlayerRepository.GetAll(ctx, &gameEntities.GetGamePlayersFilters{
-	//	GameUuid: &game.Uuid,
-	//})
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//err = g.GenerateRounds(game, players)
-	//if err != nil {
-	//	return err
-	//}
+
+	// Получаем список игроков
+	players, err := g.gamePlayerRepository.GetAll(ctx, &gameEntities.GetGamePlayersFilters{
+		GameUuid: projectUtils.ToPtr(gameUuid),
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(players) == 0 {
+		return errors.New("игроки не найдены")
+	}
+
+	firstPlayer := players[0]
+
+	_, err = g.gameRoundRepository.Create(ctx, &gameEntities.CreateGameRound{
+		GameUuid: gameUuid,
+		UserUuid: firstPlayer.UserUuid,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (g *GameService) CreateRound(ctx context.Context, gameUuid, userUuid string, action gameEntities.GameAction, result gameEntities.GameActionResult) (*gameEntities.GameRound, error) {
+func (g *GameService) createTurnsQueue(gameUuid string, players []gameEntities.GamePlayer) error {
+	redisKey := fmt.Sprintf("game:%s:turns", gameUuid)
+
+	for _, p := range players {
+		err := g.cacheService.PushToQueue(redisKey, p.UserUuid)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (g *GameService) getNextTurn(gameUuid string) (string, error) {
+	redisKey := fmt.Sprintf("game:%s:turns", gameUuid)
+
+	nextPlayerUuid, err := g.cacheService.PopFromQueue(redisKey)
+	if err != nil {
+		return "", err
+	}
+
+	if nextPlayerUuid == "" {
+		return "", errors.New("очередь ходов пуста")
+	}
+
+	err = g.cacheService.PushToQueue(redisKey, nextPlayerUuid)
+	if err != nil {
+		return "", err
+	}
+
+	return nextPlayerUuid, nil
+}
+
+func (g *GameService) removeFromQueue(gameUuid, userUuid string) error {
+	redisKey := fmt.Sprintf("game:%s:turns", gameUuid)
+
+	return g.cacheService.RemoveFromQueue(redisKey, userUuid)
+}
+
+func (g *GameService) isGameOver(gameUuid string) (bool, string, error) {
+	redisKey := fmt.Sprintf("game:%s:turns", gameUuid)
+
+	players, err := g.cacheService.GetQueueValues(redisKey)
+	if err != nil {
+		return false, "", err
+	}
+
+	if len(players) == 1 {
+		return true, players[0], nil
+	}
+
+	return false, "", nil
+}
+
+func (g *GameService) CreateRound(ctx context.Context, gameUuid, userUuid string) (*gameEntities.GameRound, error) {
 	round, err := g.gameRoundRepository.Create(ctx, &gameEntities.CreateGameRound{
 		GameUuid: gameUuid,
 		UserUuid: userUuid,
-		Action:   action,
-		Result:   result,
 	})
 	if err != nil {
 		return nil, err

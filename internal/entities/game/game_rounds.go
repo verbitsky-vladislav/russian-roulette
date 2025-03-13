@@ -26,10 +26,8 @@ type GameRound struct {
 }
 
 type CreateGameRound struct {
-	GameUuid string           `json:"game_uuid"`
-	UserUuid string           `json:"user_uuid"`
-	Action   GameAction       `json:"action"`
-	Result   GameActionResult `json:"result"`
+	GameUuid string `json:"game_uuid"`
+	UserUuid string `json:"user_uuid"`
 }
 
 type UpdateGameRound struct {

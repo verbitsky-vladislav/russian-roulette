@@ -39,6 +39,10 @@ var (
 		Code:    "ErrChatOnlyCommand",
 		Message: fmt.Sprintf("Эту команду можно вызвать только внутри группового чата @eth_russian_roulette"),
 	}
+	ErrUserWithoutActiveGame = CustomError{
+		Code:    "ErrUserWithoutActiveGame",
+		Message: "Эту команду можно вызвать только если у вас есть активная игра. Вступите в созданную игру или создайте свою: roulette [кол-во участников] [ставка]",
+	}
 )
 
 // Inline errors

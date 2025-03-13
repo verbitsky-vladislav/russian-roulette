@@ -47,4 +47,6 @@ type GetGameFilters struct {
 	CreatedAtTo   *time.Time     `json:"created_at_to,omitempty"`
 	Limit         int            `json:"limit"`
 	Offset        int            `json:"offset"`
+	// other tables
+	UserUuid *string `json:"user_uuid,omitempty"`
 }
