@@ -25,3 +25,15 @@ func UserAlreadyHaveActiveGameMessage() string {
 func DefaultErrorMessage() string {
 	return "Произошла неизвестная ошибка. Попробуйте снова или создайте новую игру."
 }
+
+func SuccessfulPassMessage() {
+
+}
+
+func SuccessfulPullMessage() {
+
+}
+
+func UnsuccessfulPullMessage() {
+
+}

@@ -40,6 +40,7 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 	passHandler := middleware.ApplyMessageMiddlewares(cmd.Pass, middleware.AuthMessageMiddleware(cmd.userService))
 	statsHandler := middleware.ApplyMessageMiddlewares(cmd.Stats, middleware.AuthMessageMiddleware(cmd.userService))
 
+	// todo добавить сохранение всех сообщений об игре в массив и их удаление (кроме finish) после того как игра закончится / закенселится / будет длиться слишком долго (время экспирации 1 день)
 	switch message.Command() {
 	case "start":
 		{

@@ -67,8 +67,9 @@ func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) 
 		return botCustomErrors.ErrGameIsNotActive
 	}
 
-	isStart, players, err := cb.userService.JoinGame(ctx, u.Uuid, gameUuid, message.From.UserName)
+	isStart, firstPlayer, players, err := cb.userService.JoinGame(ctx, u.Uuid, gameUuid, message.From.UserName)
 	if err != nil {
+		cb.logger.Debug("error joining game", zap.Error(err))
 		errText := text.DefaultErrorMessage()
 
 		if err.Error() == projectCustomErrors.ErrGameNotFound {
@@ -80,11 +81,8 @@ func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) 
 		if err.Error() == projectCustomErrors.ErrUserAlreadyJoinToGame {
 			errText = text.UserAlreadyJoinedMessage()
 		}
-		if err.Error() == projectCustomErrors.ErrUserAlreadyJoinToGame {
-			errText = text.UserAlreadyHaveActiveGameMessage()
-		}
 		if err.Error() == projectCustomErrors.ErrUserAlreadyHaveActiveGame {
-
+			errText = text.UserAlreadyHaveActiveGameMessage()
 		}
 
 		err = telegramUtils.SendMessage(cb.bot, &telegramUtils.Message{
@@ -113,7 +111,7 @@ func (cb *Callbacks) Join(ctx context.Context, message *tgbotapi.CallbackQuery) 
 			cb.logger.Debug("log players", zap.Any("player", player))
 			playersNames = append(playersNames, player.Name)
 		}
-		t := text.StartGameMessage(playersNames)
+		t := text.StartGameMessage(playersNames, firstPlayer.Name)
 
 		err = telegramUtils.SendMessage(cb.bot, &telegramUtils.Message{
 			ChatId: message.Message.Chat.ID,

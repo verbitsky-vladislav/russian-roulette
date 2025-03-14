@@ -91,6 +91,13 @@ func (r *GameRoundRepository) GetAll(ctx context.Context, filters *gameEntities.
 		qms = append(qms, models.GameRoundWhere.Result.EQ(null.NewString(string(*filters.Result), *filters.Result != "")))
 	}
 
+	if filters.OrderBy != nil {
+		qms = append(qms, qm.OrderBy(*filters.OrderBy))
+	}
+	if filters.Limit != nil && *filters.Limit > 0 {
+		qms = append(qms, qm.Limit(*filters.Limit))
+	}
+
 	rounds, err := models.GameRounds(qms...).All(ctx, r.db)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

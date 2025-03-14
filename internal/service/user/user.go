@@ -84,45 +84,45 @@ func (s *UserService) CheckUserActiveGame(ctx context.Context, userUuid string) 
 	return true, nil
 }
 
-func (s *UserService) JoinGame(ctx context.Context, userUuid, gameUuid, name string) (bool, []*gameEntities.GamePlayer, error) {
+func (s *UserService) JoinGame(ctx context.Context, userUuid, gameUuid, name string) (isStart bool, firstPlayer *gameEntities.GamePlayer, players []*gameEntities.GamePlayer, err error) {
 	s.logger.Info("JoinGame called", zap.String("userUuid", userUuid), zap.String("gameUuid", gameUuid))
 
 	isActiveGame, err := s.CheckUserActiveGame(ctx, userUuid)
 	if err != nil {
-		return false, nil, err
+		return false, nil, nil, err
 	}
 	if isActiveGame {
-		return false, nil, errors.New(custom_errors.ErrUserAlreadyHaveActiveGame)
+		return false, nil, nil, errors.New(custom_errors.ErrUserAlreadyHaveActiveGame)
 	}
 
 	game, _, players, err := s.gameService.GetGameByUuid(ctx, gameUuid, true, true)
 	if err != nil {
 		s.logger.Error("Error fetching game by UUID", zap.Error(err))
-		return false, nil, err
+		return false, nil, nil, err
 	}
 	if game == nil {
 		s.logger.Warn("Game not found", zap.String("gameUuid", gameUuid))
-		return false, nil, errors.New(custom_errors.ErrGameNotFound)
+		return false, nil, nil, errors.New(custom_errors.ErrGameNotFound)
 	}
 
 	s.logger.Info("Game found", zap.String("gameUuid", gameUuid), zap.Int("bulletCount", game.BulletCount), zap.Int("playersCount", len(players)), zap.String("status", string(game.Status)))
 
 	if len(players) >= game.BulletCount+1 || game.Status == gameEntities.Active {
 		s.logger.Warn("Game is already full or active", zap.String("gameUuid", gameUuid))
-		return false, nil, errors.New(custom_errors.ErrGameIsAlreadyFull)
+		return false, nil, nil, errors.New(custom_errors.ErrGameIsAlreadyFull)
 	}
 
 	for _, player := range players {
 		if player.UserUuid == userUuid {
 			s.logger.Warn("User already joined game", zap.String("userUuid", userUuid), zap.String("gameUuid", gameUuid))
-			return false, nil, errors.New(custom_errors.ErrUserAlreadyJoinToGame)
+			return false, nil, nil, errors.New(custom_errors.ErrUserAlreadyJoinToGame)
 		}
 	}
 
 	newPlayer, err := s.gameService.AddUserToGame(ctx, userUuid, gameUuid, name)
 	if err != nil {
 		s.logger.Error("Error adding user to game", zap.Error(err))
-		return false, nil, err
+		return false, nil, nil, err
 	}
 
 	// длина прошлых участников + 1 новый == bullet count + 1
@@ -130,12 +130,12 @@ func (s *UserService) JoinGame(ctx context.Context, userUuid, gameUuid, name str
 		players = append(players, newPlayer)
 
 		s.logger.Debug("players: ", zap.Int("playersCount", len(players)), zap.Any("players", players))
-		err := s.gameService.StartGame(ctx, gameUuid)
+		firstPlayer, err := s.gameService.StartGame(ctx, gameUuid)
 		if err != nil {
-			return false, nil, err
+			return false, nil, nil, err
 		}
 
-		return true, players, nil
+		return true, firstPlayer, players, nil
 	}
-	return false, nil, nil
+	return false, nil, nil, nil
 }

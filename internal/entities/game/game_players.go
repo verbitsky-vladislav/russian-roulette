@@ -18,10 +18,10 @@ type CreateGamePlayer struct {
 }
 
 type UpdateGamePlayer struct {
-	Uuid    string `json:"uuid"`
-	Name    string `json:"name"`
-	HasShot bool   `json:"has_shot"`
-	IsAlive bool   `json:"is_alive"`
+	UserUuid string `json:"user_uuid"`
+	Name     string `json:"name"`
+	HasShot  bool   `json:"has_shot"`
+	IsAlive  bool   `json:"is_alive"`
 }
 
 type GetGamePlayersFilters struct { // todo add check on filters exists, потому что все поинтеры

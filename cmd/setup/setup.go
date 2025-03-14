@@ -10,6 +10,7 @@ import (
 	"russian-roulette/internal/repository"
 	gameRepository "russian-roulette/internal/repository/game"
 	userRepository "russian-roulette/internal/repository/user"
+	"russian-roulette/internal/service/cache"
 	gameService "russian-roulette/internal/service/game"
 	userService "russian-roulette/internal/service/user"
 )
@@ -41,7 +42,8 @@ func Setup(cfg *config.Config, logger *zap.Logger) {
 	gamePlayersRepo := gameRepository.NewGamePlayersRepository(db.DB, logger)
 
 	// service
-	gameUc := gameService.NewGameService(gameRepo, gameRoundsRepo, gamePlayersRepo, logger)
+	cacheService := cache.NewRedisCache(&cfg.Redis, logger)
+	gameUc := gameService.NewGameService(gameRepo, gameRoundsRepo, gamePlayersRepo, cacheService, logger)
 	userUc := userService.NewUserService(userRepo, gameUc, logger)
 
 	// init telegram bot

@@ -32,6 +32,7 @@ func (r *GamePlayersRepository) NewFromModel(model *models.GamePlayer) (*game.Ga
 		UserUuid: model.UserUUID.String,
 		HasShot:  model.HasShot.Bool,
 		IsAlive:  model.IsAlive.Bool,
+		Name:     model.Name,
 	}, nil
 }
 
@@ -52,7 +53,7 @@ func (r *GamePlayersRepository) Create(ctx context.Context, newPlayer *game.Crea
 }
 
 func (r *GamePlayersRepository) Update(ctx context.Context, upd *game.UpdateGamePlayer) (*game.GamePlayer, error) {
-	player, err := models.GamePlayers(models.GamePlayerWhere.UUID.EQ(upd.Uuid)).One(ctx, r.db)
+	player, err := models.GamePlayers(models.GamePlayerWhere.UserUUID.EQ(null.NewString(upd.UserUuid, upd.UserUuid != ""))).One(ctx, r.db)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New(custom_errors.ErrGamePlayersNotFound)

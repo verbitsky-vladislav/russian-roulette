@@ -29,7 +29,7 @@ func NewRouletteGameMessage(players, bullets int, bet *types.Decimal) string {
 	)
 }
 
-func StartGameMessage(playersName []string) string {
+func StartGameMessage(playersName []string, firstPlayer string) string {
 	escapedPlayers := make([]string, len(playersName))
 	for i, name := range playersName {
 		escapedPlayers[i] = "@" + tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, name)
@@ -48,14 +48,20 @@ func StartGameMessage(playersName []string) string {
 - Если выстрел был холостым – ход передаётся дальше.
 - Если попался патрон – игрок выбывает, игра продолжается.
 
+Первым совершает действие: %s
+
 🎮 *Доступные команды:*
 🔫 /pull – выстрелить (можно несколько раз).
 🔄 /pass – передать револьвер (только после выстрела).
 👥 /players – список участников.
 
-🔥 *Удачи, бойцы!* Пусть фортуна будет на вашей стороне! 💀`, strings.Join(escapedPlayers, " "))
+🔥 *Удачи, бойцы!* Пусть фортуна будет на вашей стороне! 💀`, strings.Join(escapedPlayers, " "), firstPlayer)
 }
 
 func SuccessfulCancelGameMessage() string {
 	return "Игра успешно отменена. Все ставки возвращены игрокам."
+}
+
+func FinishGameMessage() {
+
 }

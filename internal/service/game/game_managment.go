@@ -52,102 +52,83 @@ func (g *GameService) CancelGame(ctx context.Context, gameUuid, creatorUuid stri
 	return nil
 }
 
-func (g *GameService) StartGame(ctx context.Context, gameUuid string) error {
-	_, err := g.gameRepository.Update(ctx, &gameEntities.UpdateGame{
+func (g *GameService) StartGame(ctx context.Context, gameUuid string) (firstPlayer *gameEntities.GamePlayer, err error) {
+	_, err = g.gameRepository.Update(ctx, &gameEntities.UpdateGame{
 		Uuid:   gameUuid,
 		Status: projectUtils.ToPtr(gameEntities.Active),
-	})
-	if err != nil {
-		return err
-	}
-
-	// Получаем список игроков
-	players, err := g.gamePlayerRepository.GetAll(ctx, &gameEntities.GetGamePlayersFilters{
-		GameUuid: projectUtils.ToPtr(gameUuid),
-	})
-	if err != nil {
-		return err
-	}
-
-	if len(players) == 0 {
-		return errors.New("игроки не найдены")
-	}
-
-	firstPlayer := players[0]
-
-	_, err = g.gameRoundRepository.Create(ctx, &gameEntities.CreateGameRound{
-		GameUuid: gameUuid,
-		UserUuid: firstPlayer.UserUuid,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (g *GameService) createTurnsQueue(gameUuid string, players []gameEntities.GamePlayer) error {
-	redisKey := fmt.Sprintf("game:%s:turns", gameUuid)
-
-	for _, p := range players {
-		err := g.cacheService.PushToQueue(redisKey, p.UserUuid)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (g *GameService) getNextTurn(gameUuid string) (string, error) {
-	redisKey := fmt.Sprintf("game:%s:turns", gameUuid)
-
-	nextPlayerUuid, err := g.cacheService.PopFromQueue(redisKey)
-	if err != nil {
-		return "", err
-	}
-
-	if nextPlayerUuid == "" {
-		return "", errors.New("очередь ходов пуста")
-	}
-
-	err = g.cacheService.PushToQueue(redisKey, nextPlayerUuid)
-	if err != nil {
-		return "", err
-	}
-
-	return nextPlayerUuid, nil
-}
-
-func (g *GameService) removeFromQueue(gameUuid, userUuid string) error {
-	redisKey := fmt.Sprintf("game:%s:turns", gameUuid)
-
-	return g.cacheService.RemoveFromQueue(redisKey, userUuid)
-}
-
-func (g *GameService) isGameOver(gameUuid string) (bool, string, error) {
-	redisKey := fmt.Sprintf("game:%s:turns", gameUuid)
-
-	players, err := g.cacheService.GetQueueValues(redisKey)
-	if err != nil {
-		return false, "", err
-	}
-
-	if len(players) == 1 {
-		return true, players[0], nil
-	}
-
-	return false, "", nil
-}
-
-func (g *GameService) CreateRound(ctx context.Context, gameUuid, userUuid string) (*gameEntities.GameRound, error) {
-	round, err := g.gameRoundRepository.Create(ctx, &gameEntities.CreateGameRound{
-		GameUuid: gameUuid,
-		UserUuid: userUuid,
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	players, err := g.gamePlayerRepository.GetAll(ctx, &gameEntities.GetGamePlayersFilters{
+		GameUuid: projectUtils.ToPtr(gameUuid),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(players) == 0 {
+		return nil, errors.New("игроки не найдены")
+	}
+
+	// Сохраняем порядок ходов в Redis
+	turnsKey := fmt.Sprintf("game:%s:turns", gameUuid)
+	for _, player := range players {
+		err := g.cacheService.PushToQueue(turnsKey, player.UserUuid)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Устанавливаем первого игрока
+	firstPlayer = players[0]
+	_, err = g.gameRoundRepository.Create(ctx, &gameEntities.CreateGameRound{
+		GameUuid: gameUuid,
+		UserUuid: firstPlayer.UserUuid,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return firstPlayer, nil
+}
+
+// todo добавить распределение выигрыша, очистку redis кеша и прочее
+func (g *GameService) FinishGame(ctx context.Context, gameUuid string) error {
+	_, err := g.gameRepository.Update(ctx, &gameEntities.UpdateGame{
+		Uuid:   gameUuid,
+		Status: projectUtils.ToPtr(gameEntities.Finished),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *GameService) CreateRound(ctx context.Context, createRound *gameEntities.CreateGameRound) (*gameEntities.GameRound, error) {
+	round, err := g.gameRoundRepository.Create(ctx, createRound)
+	if err != nil {
+		return nil, err
+	}
+
 	return round, nil
+}
+
+func (g *GameService) GetLastRound(ctx context.Context, gameUuid string) (*gameEntities.GameRound, error) {
+	rounds, err := g.gameRoundRepository.GetAll(ctx, &gameEntities.GetGameRoundsFilters{
+		GameUuid: projectUtils.ToPtr(gameUuid),
+		Limit:    projectUtils.ToPtr(1),                 // Ограничиваем одним последним раундом
+		OrderBy:  projectUtils.ToPtr("created_at DESC"), // Берем самый последний
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rounds) == 0 {
+		return nil, nil
+	}
+
+	return rounds[0], nil
 }

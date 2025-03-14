@@ -13,7 +13,7 @@ type GameActionResult string
 
 var (
 	Miss GameActionResult = "miss"
-	Show GameActionResult = "show"
+	Shot GameActionResult = "shot"
 )
 
 type GameRound struct {
@@ -26,8 +26,10 @@ type GameRound struct {
 }
 
 type CreateGameRound struct {
-	GameUuid string `json:"game_uuid"`
-	UserUuid string `json:"user_uuid"`
+	GameUuid string            `json:"game_uuid"`
+	UserUuid string            `json:"user_uuid"`
+	Action   *GameAction       `json:"action"`
+	Result   *GameActionResult `json:"result"`
 }
 
 type UpdateGameRound struct {
@@ -36,10 +38,12 @@ type UpdateGameRound struct {
 	Result *GameActionResult `json:"result"`
 }
 
-type GetGameRoundsFilters struct { // todo add check if filters null return nill
+type GetGameRoundsFilters struct {
 	Uuid     *string           `json:"uuid"`
 	GameUuid *string           `json:"game_uuid"`
 	UserUuid *string           `json:"user_uuid"`
 	Action   *GameAction       `json:"action"`
 	Result   *GameActionResult `json:"result"`
+	OrderBy  *string           `json:"order_by"`
+	Limit    *int              `json:"limit"`
 }

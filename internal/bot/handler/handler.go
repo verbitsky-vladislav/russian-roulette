@@ -83,7 +83,7 @@ func (h *Handler) handleCommand(message *tgbotapi.Message) {
 			"error in handle command handler",
 			zap.Int64("user_id", message.Chat.ID),
 			zap.String("command", message.Command()),
-			//zap.Error(err),
+			zap.Error(err),
 		)
 
 		h.logger.Info("Error type", zap.String("type", fmt.Sprintf("%T", err)))
