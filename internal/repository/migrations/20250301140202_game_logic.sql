@@ -6,6 +6,7 @@ CREATE TABLE game (
     status VARCHAR(20) NOT NULL CHECK (status IN ('waiting', 'active', 'finished', 'cancelled')),
     bet_amount DECIMAL(10,2) NOT NULL,
     bullet_count INT NOT NULL,
+    rounds_count INT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );
 

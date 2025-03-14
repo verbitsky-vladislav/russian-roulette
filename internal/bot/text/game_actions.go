@@ -1,6 +1,9 @@
 package text
 
-import "fmt"
+import (
+	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
 
 func SuccessfulJoinGameMessage() string {
 	return fmt.Sprintf("Вы успешно присоединились к игре! Ожидаем других игроков...")
@@ -26,14 +29,32 @@ func DefaultErrorMessage() string {
 	return "Произошла неизвестная ошибка. Попробуйте снова или создайте новую игру."
 }
 
-func SuccessfulPassMessage() {
-
+func SuccessfulPassMessage(currentPlayer, nextPlayer string, bulletsLeft, roundsLeft int) string {
+	return fmt.Sprintf(
+		"🔄 *%s остаётся в игре и передаёт ход %s.*\n🎯 Осталось патронов: %d/6\n🕒 Осталось раундов: %d",
+		"@"+tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, currentPlayer),
+		"@"+tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, nextPlayer),
+		bulletsLeft,
+		roundsLeft,
+	)
 }
 
-func SuccessfulPullMessage() {
-
+// todo fix экранирование
+func SuccessfulPullMessage(currentPlayer string, bulletsLeft, roundsLeft int) string {
+	return fmt.Sprintf(
+		"💥 *%s остаётся в игре!*\nЧто будете делать дальше?\n👉 /pull (стрелять) или 🔄 /pass (передать ход)\n🎯 Осталось патронов: %d/6\n🔄 Раундов осталось: %d/6",
+		"@"+tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, currentPlayer),
+		bulletsLeft,
+		roundsLeft,
+	)
 }
 
-func UnsuccessfulPullMessage() {
-
+func UnsuccessfulPullMessage(currentPlayer, nextPlayer string, bulletsLeft, roundsLeft int) string {
+	return fmt.Sprintf(
+		"💀 *%s выбывает из игры!* 😵\nСледующий ход делает %s.\n🎯 Осталось патронов: %d/6\n🔄 Раундов осталось: %d/6\n\n🎮 *Доступные команды:*\n🔫 /pull – выстрелить\n🔄 /pass – передать револьвер",
+		"@"+tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, currentPlayer),
+		"@"+tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, nextPlayer),
+		bulletsLeft,
+		roundsLeft,
+	)
 }

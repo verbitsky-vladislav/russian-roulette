@@ -24,8 +24,8 @@ type (
 		CreateRound(ctx context.Context, createRound *gameEntities.CreateGameRound) (*gameEntities.GameRound, error)
 		GetLastRound(ctx context.Context, gameUuid string) (*gameEntities.GameRound, error)
 
-		PullTrigger(ctx context.Context, game *gameEntities.Game) (isDead, isOver bool, err error)
-		PassTrigger(ctx context.Context, gameUuid, userUuid string) (nextPlayer *gameEntities.GamePlayer, err error)
+		PullTrigger(ctx context.Context, game *gameEntities.Game, playerGuid string) (isDead, isOver bool, currentPlayer, nextPlayer *gameEntities.GamePlayer, updatedGame *gameEntities.Game, err error)
+		PassTrigger(ctx context.Context, gameUuid, userUuid string) (currentPlayer, nextPlayer *gameEntities.GamePlayer, bullets, rounds int, err error)
 
 		AddUserToGame(ctx context.Context, userUuid, gameUuid, name string) (*gameEntities.GamePlayer, error)
 	}

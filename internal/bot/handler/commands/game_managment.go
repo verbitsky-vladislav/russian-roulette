@@ -59,10 +59,10 @@ func (cmd *Commands) Roulette(ctx context.Context, message *tgbotapi.Message) er
 		Status:      gameEntities.Waiting,
 		BetAmount:   *bet,
 		BulletCount: bullets,
+		RoundsCount: 6, // todo maybe here need not constant
 	})
 	if err != nil {
-		gameAlreadyExists := errors.New(custom_errors.ErrGameAlreadyExists)
-		if errors.As(err, &gameAlreadyExists) {
+		if err.Error() == custom_errors.ErrGameAlreadyExists {
 			err := telegramUtils.SendMessage(cmd.bot, &telegramUtils.Message{
 				ChatId:      message.Chat.ID,
 				Text:        text.GameAlreadyExistsMessage(),

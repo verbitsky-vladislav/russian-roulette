@@ -35,6 +35,8 @@ func StartGameMessage(playersName []string, firstPlayer string) string {
 		escapedPlayers[i] = "@" + tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, name)
 	}
 
+	escapedFirstPlayer := "@" + tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, firstPlayer)
+
 	return fmt.Sprintf(`🎰 *Игра началась!* 🎰
 Добро пожаловать в русскую рулетку! ☠️🔫
 
@@ -55,13 +57,29 @@ func StartGameMessage(playersName []string, firstPlayer string) string {
 🔄 /pass – передать револьвер (только после выстрела).
 👥 /players – список участников.
 
-🔥 *Удачи, бойцы!* Пусть фортуна будет на вашей стороне! 💀`, strings.Join(escapedPlayers, " "), firstPlayer)
+🔥 *Удачи, бойцы!* Пусть фортуна будет на вашей стороне! 💀`, strings.Join(escapedPlayers, " "), escapedFirstPlayer)
 }
 
 func SuccessfulCancelGameMessage() string {
 	return "Игра успешно отменена. Все ставки возвращены игрокам."
 }
 
-func FinishGameMessage() {
+func FinishGameMessage(winner string, players []string, betAmount, bulletsUsed int) string {
+	escapedPlayers := make([]string, len(players))
+	for i, name := range players {
+		escapedPlayers[i] = "@" + tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, name)
+	}
 
+	return fmt.Sprintf(
+		"🏆 *Игра окончена!* 🎉\n\n"+
+			"🎯 Использовано патронов: %d/6\n"+
+			"💰 Ставка: *%d USDT*\n"+
+			"👥 Участники: %s\n\n"+
+			"🥇 *Победитель:* %s 🎊\n\n"+
+			"Спасибо за игру! 🚀 Хотите сыграть еще раз? /roulette",
+		bulletsUsed,
+		betAmount,
+		strings.Join(escapedPlayers, ", "),
+		"@"+tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, winner),
+	)
 }

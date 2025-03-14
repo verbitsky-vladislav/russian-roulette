@@ -41,6 +41,7 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 	statsHandler := middleware.ApplyMessageMiddlewares(cmd.Stats, middleware.AuthMessageMiddleware(cmd.userService))
 
 	// todo добавить сохранение всех сообщений об игре в массив и их удаление (кроме finish) после того как игра закончится / закенселится / будет длиться слишком долго (время экспирации 1 день)
+	// todo все сообщения бота переделать на reply to user message (чтобы было понятнее с кем общается бот)
 	switch message.Command() {
 	case "start":
 		{
@@ -73,7 +74,7 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 			// Бот случайным образом определяет, произошел ли выстрел.
 			err := pullHandler(ctx, message)
 			return err
-		}
+		} // todo добавить валидацию ошибок (action not allowed, не твой ход и т.д.)
 	case "pass":
 		{
 			cmd.logger.Debug("/pass : command was handled")
@@ -81,7 +82,7 @@ func (cmd *Commands) CommandsRouter(message *tgbotapi.Message) error {
 			// Бот должен проверить, сделал ли игрок хотя бы один выстрел перед передачей.
 			err := passHandler(ctx, message)
 			return err
-		}
+		} // todo добавить валидацию ошибок (action not allowed, не твой ход и т.д.)
 	case "players":
 		{
 			cmd.logger.Debug("/players : command was handled")

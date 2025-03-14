@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"russian-roulette/internal/entities/custom_errors"
 	gameEntities "russian-roulette/internal/entities/game"
 	projectUtils "russian-roulette/internal/utils"
@@ -29,6 +30,7 @@ func (g *GameService) CreateGame(ctx context.Context, newGame *gameEntities.Crea
 	return game, nil
 }
 
+// todo отменить можно только если игра еще не началась
 func (g *GameService) CancelGame(ctx context.Context, gameUuid, creatorUuid string) error {
 	game, err := g.gameRepository.GetAll(ctx, &gameEntities.GetGameFilters{
 		Uuid:        projectUtils.ToPtr(gameUuid),
@@ -72,6 +74,11 @@ func (g *GameService) StartGame(ctx context.Context, gameUuid string) (firstPlay
 		return nil, errors.New("игроки не найдены")
 	}
 
+	// Перемешиваем порядок игроков случайным образом
+	rand.Shuffle(len(players), func(i, j int) {
+		players[i], players[j] = players[j], players[i]
+	})
+
 	// Сохраняем порядок ходов в Redis
 	turnsKey := fmt.Sprintf("game:%s:turns", gameUuid)
 	for _, player := range players {
@@ -95,7 +102,7 @@ func (g *GameService) StartGame(ctx context.Context, gameUuid string) (firstPlay
 }
 
 // todo добавить распределение выигрыша, очистку redis кеша и прочее
-func (g *GameService) FinishGame(ctx context.Context, gameUuid string) error {
+func (g *GameService) FinishGame(ctx context.Context, gameUuid, winnerUuid string) error {
 	_, err := g.gameRepository.Update(ctx, &gameEntities.UpdateGame{
 		Uuid:   gameUuid,
 		Status: projectUtils.ToPtr(gameEntities.Finished),

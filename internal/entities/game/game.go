@@ -20,6 +20,7 @@ type Game struct {
 	Status      GameStatus    `json:"status"`
 	BetAmount   types.Decimal `json:"bet_amount"`
 	BulletCount int           `json:"bullet_count"`
+	RoundsCount int           `json:"rounds_count"`
 	CreatedAt   time.Time     `json:"created_at"`
 }
 
@@ -28,6 +29,7 @@ type CreateGame struct {
 	Status      GameStatus    `json:"status"`
 	BetAmount   types.Decimal `json:"bet_amount"`
 	BulletCount int           `json:"bullet_count"`
+	RoundsCount int           `json:"rounds_count"`
 }
 
 type UpdateGame struct {
@@ -35,6 +37,7 @@ type UpdateGame struct {
 	Status      *GameStatus    `json:"status,omitempty"`
 	BetAmount   *types.Decimal `json:"bet_amount,omitempty"`
 	BulletCount *int           `json:"bullet_count,omitempty"`
+	RoundsCount *int           `json:"rounds_count"`
 }
 
 type GetGameFilters struct {
@@ -43,6 +46,7 @@ type GetGameFilters struct {
 	Status        *string        `json:"status,omitempty"`
 	BetAmount     *types.Decimal `json:"bet_amount,omitempty"`
 	BulletCount   *int           `json:"bullet_count,omitempty"`
+	RoundsCount   *int           `json:"rounds_count,omitempty"`
 	CreatedAtFrom *time.Time     `json:"created_at_from,omitempty"`
 	CreatedAtTo   *time.Time     `json:"created_at_to,omitempty"`
 	Limit         int            `json:"limit"`

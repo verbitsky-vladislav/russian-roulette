@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/friendsofgo/errors"
+	dec "github.com/shopspring/decimal"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -32,8 +33,9 @@ func (r *GameRepository) NewFromModel(model *models.Game) (*gameEntities.Game, e
 		Uuid:        model.UUID,
 		CreatorUuid: model.CreatorUUID.String,
 		Status:      gameEntities.GameStatus(model.Status),
-		BetAmount:   *types.NewDecimalFromString(model.BetAmount),
+		BetAmount:   *types.NewDecimalFromString(model.BetAmount.String()),
 		BulletCount: model.BulletCount,
+		RoundsCount: model.RoundsCount,
 		CreatedAt:   model.CreatedAt.Time,
 	}, nil
 }
@@ -41,14 +43,19 @@ func (r *GameRepository) NewFromModel(model *models.Game) (*gameEntities.Game, e
 func (r *GameRepository) Create(ctx context.Context, newGame *gameEntities.CreateGame) (*gameEntities.Game, error) {
 	r.logger.Debug("create new game", zap.Any("game", newGame))
 
+	bet, err := dec.NewFromString(newGame.BetAmount.String())
+	if err != nil {
+		return nil, err
+	}
 	game := &models.Game{
 		CreatorUUID: null.NewString(newGame.CreatorUuid, newGame.CreatorUuid != ""),
 		Status:      string(newGame.Status),
-		BetAmount:   newGame.BetAmount.String(),
+		BetAmount:   bet,
 		BulletCount: newGame.BulletCount,
+		RoundsCount: newGame.RoundsCount,
 	}
 
-	err := game.Insert(ctx, r.db, boil.Infer())
+	err = game.Insert(ctx, r.db, boil.Infer())
 	if err != nil {
 		return nil, errors.Wrap(err, custom_errors.ErrInsertGame)
 	}
@@ -75,10 +82,17 @@ func (r *GameRepository) Update(ctx context.Context, upd *gameEntities.UpdateGam
 		game.Status = string(*upd.Status)
 	}
 	if upd.BetAmount != nil {
-		game.BetAmount = upd.BetAmount.String()
+		bet, err := dec.NewFromString(upd.BetAmount.String())
+		if err != nil {
+			return nil, err
+		}
+		game.BetAmount = bet
 	}
 	if upd.BulletCount != nil {
 		game.BulletCount = *upd.BulletCount
+	}
+	if upd.RoundsCount != nil {
+		game.RoundsCount = *upd.RoundsCount
 	}
 
 	_, err = game.Update(ctx, r.db, boil.Infer())
@@ -110,11 +124,19 @@ func (r *GameRepository) GetAll(ctx context.Context, filters *gameEntities.GetGa
 	}
 
 	if filters.BetAmount != nil {
-		qms = append(qms, models.GameWhere.BetAmount.EQ(filters.BetAmount.String()))
+		bet, err := dec.NewFromString(filters.BetAmount.String())
+		if err != nil {
+			return nil, err
+		}
+		qms = append(qms, models.GameWhere.BetAmount.EQ(bet))
 	}
 
 	if filters.BulletCount != nil {
 		qms = append(qms, models.GameWhere.BulletCount.EQ(*filters.BulletCount))
+	}
+
+	if filters.RoundsCount != nil {
+		qms = append(qms, models.GameWhere.RoundsCount.EQ(*filters.RoundsCount))
 	}
 
 	if filters.Limit != 0 {
